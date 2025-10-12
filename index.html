@@ -3,7 +3,41 @@ import { Component, signal, ChangeDetectionStrategy, computed } from '@angular/c
 // Tipos de datos para las opciones de selección
 type Option = { label: string, value: string };
 
-// Datos simulados (Mock Data) para las listas desplegables
+// 1. NUEVO TIPO DE DATO PARA LOS RESULTADOS DE BÚSQUEDA
+type Resultado = {
+  nroExpediente: string;
+  instancia: string;
+  especialidad: string;
+  fechaIngreso: string;
+  estado: string;
+  demandante: string;
+  demandado: string;
+};
+
+// 2. DATOS SIMULADOS PARA LA TABLA DE RESULTADOS (Mock Data)
+const MOCK_RESULTS: Resultado[] = [
+  {
+    nroExpediente: '00123-2025-0-2101-JR-LA-01',
+    instancia: 'Juzgado Especializado de Trabajo',
+    especialidad: 'Laboral',
+    fechaIngreso: '15/03/2025',
+    estado: 'En Trámite (Sentencia Pendiente)',
+    demandante: 'JUAN PEREZ LOPEZ',
+    demandado: 'EMPRESA EJEMPLO S.A.C.',
+  },
+  {
+    nroExpediente: '00456-2024-0-2101-JR-LA-01',
+    instancia: 'Juzgado Especializado de Familia',
+    especialidad: 'Familia Civil',
+    fechaIngreso: '10/11/2024',
+    estado: 'Archivado',
+    demandante: 'MARIA GOMEZ RUIZ',
+    demandado: 'FABRICA MODERNA E.I.R.L.',
+  },
+];
+
+
+// Datos simulados para las listas desplegables
 const MOCK_OPTIONS = {
   distritos: [
     { label: '--SELECCIONAR--', value: '' },
@@ -57,7 +91,8 @@ const MOCK_OPTIONS = {
     { label: 'FAMILIA TUTELAR', value: 'FAM_TUTELAR' },
     { label: 'LABORAL', value: 'LABORAL' },
   ],
-  años: Array.from({ length: 30 }, (_, i) => ({ 
+  // Usamos 'anios' en lugar de 'años' para evitar errores de compilación JIT
+  anios: Array.from({ length: 30 }, (_, i) => ({ 
     label: String(2025 - i), 
     value: String(2025 - i) 
   })),
@@ -101,6 +136,16 @@ const MOCK_OPTIONS = {
         color: #8B1B1C;
         font-weight: bold;
       }
+      /* Estilos de la tabla de resultados */
+      .table-header {
+        background-color: #f1f5f9; /* slate-100 */
+        color: #334155; /* slate-700 */
+        font-weight: 600;
+        text-align: left;
+      }
+      .table-row:nth-child(even) {
+        background-color: #f8fafc; /* sky-50 */
+      }
     </style>
 
     <div class="min-h-screen bg-gray-200 p-4 sm:p-8 font-inter">
@@ -132,6 +177,7 @@ const MOCK_OPTIONS = {
 
         <!-- Contenido de las Pestañas -->
         <div class="p-6 sm:p-8">
+          <!-- El formulario se muestra si la pestaña activa es 'filtros' -->
           @if (tabActiva() === 'filtros') {
             <!-- Formulario de Búsqueda por Filtros -->
             <form (submit)="buscarExpediente($event)" class="space-y-6">
@@ -194,7 +240,7 @@ const MOCK_OPTIONS = {
                   required
                   class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
                 >
-                  @for (opt of mockOptions.años; track opt.value) {
+                  @for (opt of mockOptions.anios; track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
@@ -392,10 +438,64 @@ const MOCK_OPTIONS = {
                 </div>
             </form>
           }
+
+          <!-- 3. NUEVA SECCIÓN: RESULTADOS DE LA BÚSQUEDA -->
+          @if (busquedaRealizada()) {
+            <div class="pt-8 mt-6 border-t border-gray-300">
+              <h2 class="text-xl font-bold text-gray-800 mb-4">Resultados de la Búsqueda</h2>
+              
+              @if (resultados().length > 0) {
+                <div class="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th class="px-3 py-3 text-xs table-header w-1/4">N° Expediente</th>
+                        <th class="px-3 py-3 text-xs table-header">Instancia / Especialidad</th>
+                        <th class="px-3 py-3 text-xs table-header hidden sm:table-cell">Estado</th>
+                        <th class="px-3 py-3 text-xs table-header">Partes</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                      @for (res of resultados(); track res.nroExpediente) {
+                        <tr class="table-row hover:bg-gray-100">
+                          <td class="px-3 py-4 whitespace-nowrap text-sm font-medium text-blue-700 cursor-pointer hover:underline w-1/4">
+                            {{ res.nroExpediente }}
+                            <div class="text-xs text-gray-500 mt-1 sm:hidden">{{ res.fechaIngreso }}</div>
+                          </td>
+                          <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <span class="font-semibold">{{ res.instancia }}</span>
+                            <br>
+                            <span class="text-xs text-gray-500">{{ res.especialidad }}</span>
+                          </td>
+                          <td class="px-3 py-4 whitespace-nowrap text-sm hidden sm:table-cell">
+                            <span [class]="res.estado.includes('Archivado') ? 'bg-gray-200 text-gray-800' : 'bg-green-100 text-green-800'"
+                                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                {{ res.estado }}
+                            </span>
+                          </td>
+                          <td class="px-3 py-4 text-sm text-gray-800">
+                            <span class="font-medium text-xs block truncate" title="Demandante: {{ res.demandante }}">Dte: {{ res.demandante }}</span>
+                            <span class="font-medium text-xs text-red-600 block truncate" title="Demandado: {{ res.demandado }}">Ddo: {{ res.demandado }}</span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <!-- Mensaje de no resultados -->
+                <div class="p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
+                  <p class="font-bold">Información:</p>
+                  <p class="text-sm">No se encontraron expedientes con los filtros ingresados. Intente con otros criterios.</p>
+                </div>
+              }
+            </div>
+          }
+
         </div>
         
         <!-- Pie de página simulado para completar el diseño -->
-        <div class="text-center text-xs text-gray-500 p-4 border-t border-gray-300">
+        <div class="text-center text-xs text-gray-500 p-4 border-t border-gray-300 rounded-b-xl">
             © 2016 Todos los derechos reservados
             <br>
             Recomendado para Chrome, Mozilla Firefox, ¡Explorer 9 o versiones superiores
@@ -417,7 +517,7 @@ export class App {
     distrito: signal<string>('PUNO'),
     instancia: signal<string>('JE'), // JUZGADO ESPECIALIZADO
     especialidad: signal<string>('LABORAL'),
-    anio: signal<string>('2025'),
+    anio: signal<string>('2025'), 
     n_expediente: signal<string>('9876'),
     parte: signal<string>('lupaca'),
   };
@@ -431,6 +531,10 @@ export class App {
   
   // Estado de Mensajes
   mensajeError = signal<string | null>(null);
+
+  // 4. NUEVAS SEÑALES PARA MANEJO DE RESULTADOS
+  resultados = signal<Resultado[]>([]);
+  busquedaRealizada = signal<boolean>(false); // Indica si ya se ha intentado buscar al menos una vez
 
   // --- LÓGICA COMPUTADA ---
 
@@ -504,28 +608,25 @@ export class App {
   buscarExpediente(event: Event): void {
     event.preventDefault();
     this.mensajeError.set(null);
+    this.busquedaRealizada.set(true); // Se inicia el intento de búsqueda
 
-    // Si la validación computada es falsa, mostramos error de captcha (que es lo más probable si llega aquí)
+    // 5. LÓGICA DE SIMULACIÓN DE RESULTADOS
     if (this.captchaInput().toUpperCase() !== this.captchaCode().toUpperCase()) {
       this.mensajeError.set('El código de seguridad ingresado es incorrecto.');
-      this.generarNuevoCaptcha(); // Recargar el captcha
+      this.generarNuevoCaptcha();
+      this.resultados.set([]); // Limpiar resultados anteriores
       return;
     }
 
-    // Lógica de búsqueda simulada (aquí iría la llamada a la API real)
-    console.log('--- BÚSQUEDA POR FILTROS INICIADA ---');
-    console.log('Filtros:', {
-      distrito: this.filtros.distrito(),
-      instancia: this.filtros.instancia(),
-      especialidad: this.filtros.especialidad(),
-      anio: this.filtros.anio(),
-      n_expediente: this.filtros.n_expediente(),
-      parte: this.filtros.parte(),
-    });
-    console.log('------------------------------------');
-    
-    // Aquí se mostrarían los resultados o un mensaje de éxito/error.
-    this.mensajeError.set('Búsqueda simulada exitosa. Aquí se cargarían los resultados en una nueva sección.');
+    // Si el n° de expediente es 9876, simulamos encontrar resultados.
+    if (this.filtros.n_expediente() === '9876' && this.filtros.distrito() === 'PUNO') { 
+        this.resultados.set(MOCK_RESULTS);
+        this.generarNuevoCaptcha();
+    } else {
+        this.resultados.set([]); // No hay resultados
+        this.generarNuevoCaptcha();
+    }
+    // NOTA: El mensaje de éxito/error ya no se usa, ahora se muestra la tabla o el mensaje de 'No se encontraron'.
   }
 
   /**
@@ -535,19 +636,23 @@ export class App {
   buscarExpedienteCodigo(event: Event): void {
     event.preventDefault();
     this.mensajeError.set(null);
+    this.busquedaRealizada.set(true);
 
     if (this.captchaInput().toUpperCase() !== this.captchaCode().toUpperCase()) {
       this.mensajeError.set('El código de seguridad ingresado es incorrecto.');
       this.generarNuevoCaptcha();
+      this.resultados.set([]);
       return;
     }
 
-    // Lógica de búsqueda simulada
-    console.log('--- BÚSQUEDA POR CÓDIGO INICIADA ---');
-    console.log('Código:', this.codigoExpedienteInput());
-    console.log('Parte:', this.filtros.parte());
-    console.log('------------------------------------');
-
-    this.mensajeError.set('Búsqueda por código simulada. Los resultados aparecerían aquí.');
+    // 5. LÓGICA DE SIMULACIÓN DE RESULTADOS POR CÓDIGO
+    // Si el código contiene '00123', simulamos resultados.
+    if (this.codigoExpedienteInput().includes('00123')) {
+        this.resultados.set(MOCK_RESULTS.slice(0, 1)); // Muestra solo el primer resultado
+        this.generarNuevoCaptcha();
+    } else {
+        this.resultados.set([]); // No hay resultados
+        this.generarNuevoCaptcha();
+    }
   }
 }
