@@ -61,12 +61,13 @@
                 <div class="flex items-center space-x-2">
                     <!-- Placeholder de Logos (usamos texto) -->
                     <span class="text-xl font-bold mr-4">PJ</span>
-                    <span class="text-xs">PODER JUDICIAL DEL PERÚ, Justicia Honorable, País Respetable</span>
+                    <span class="text-xs">PODER JUDICIAL DEL PERÚ - PUNO, Justicia Honorable, País Respetable</span>
                 </div>
                 <div class="hidden sm:block text-right">
-                    <div class="font-bold text-xs">Consulta de Expedientes Judiciales</div>
+                    <div class="font-bold text-xs">Consulta de Expedientes Judiciales RYNLD</div>
                     <div class="text-xs">Cortes Superiores de Justicia</div>
-                    <div class="text-[10px]">Fecha: 11/10/2025 Hora: 21:34:38</div>
+                    <!-- ELEMENTO ACTUALIZADO: Se agregó el ID 'current-datetime' -->
+                    <div id="current-datetime" class="text-[10px]">Cargando fecha y hora...</div>
                 </div>
             </div>
         </div>
@@ -216,9 +217,38 @@
 
     </main>
 
-    <!-- Script para el manejo de pestañas -->
+    <!-- Script para el manejo de pestañas y la hora en tiempo real -->
     <script>
+        // Función para formatear la hora y fecha
+        function formatDateTime(date) {
+            // Formatea la fecha (ej: 11/10/2025)
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Meses son de 0-11
+            const year = date.getFullYear();
+
+            // Formatea la hora (ej: 21:34:38)
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+
+            return `Fecha: ${day}/${month}/${year} Hora: ${hours}:${minutes}:${seconds}`;
+        }
+
+        // Función que actualiza el contenido de la fecha y hora
+        function updateTime() {
+            const dateTimeElement = document.getElementById('current-datetime');
+            if (dateTimeElement) {
+                const now = new Date();
+                dateTimeElement.textContent = formatDateTime(now);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar y establecer el intervalo para actualizar la hora cada 1 segundo (1000ms)
+            updateTime();
+            setInterval(updateTime, 1000);
+
+            // --- Lógica de pestañas ---
             const tabFiltros = document.getElementById('tab-filtros');
             const tabCodigo = document.getElementById('tab-codigo');
             const contentFiltros = document.getElementById('content-filtros');
