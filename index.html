@@ -23,10 +23,12 @@
         .tab-active {
             background-color: var(--pj-red);
             color: white;
-            border-bottom: 2px solid var(--pj-red);
+            /* La pestaña activa se mezcla con el fondo blanco del formulario, sin un borde inferior. */
+            border-bottom: 0px; 
+            border-radius: 0.375rem 0.375rem 0 0; /* rounded-t-md */
         }
         .tab-inactive {
-            background-color: var(--pj-dark);
+            background-color: #A0A0A0; /* Gris más claro para la inactiva */
             color: white;
         }
         .form-label {
@@ -48,6 +50,52 @@
             font-size: 1.5rem;
             font-weight: 700;
             color: var(--pj-dark);
+            /* Simulación de estilo de la imagen del captcha */
+            text-decoration: line-through 2px red;
+            background-image: url('https://placehold.co/150x40/500/fff?text=CAPTCHA'); /* Placeholder visual */
+            background-size: cover;
+            color: transparent; /* Ocultamos el texto real para mostrar el placeholder */
+        }
+        /* Ajuste para que las pestañas encajen justo encima del formulario */
+        .tab-container {
+            max-width: 2xl;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            margin-bottom: -1px; /* Para que el borde de la pestaña se superponga con el borde del contenedor */
+            border-bottom: 2px solid var(--pj-red); /* Borde que separa */
+        }
+        /* Estilo específico para la pestaña de Código de Expediente */
+        .codigo-form-box {
+            border-top: 2px solid var(--pj-red);
+        }
+
+        /* Clase para el botón de recarga/audio */
+        .captcha-btn {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .captcha-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .captcha-btn svg {
+            color: var(--pj-dark);
+        }
+
+        /* Estilo para simular el captcha real (texto visible, pero con el fondo de la imagen) */
+        .captcha-display {
+             background-image: url('https://placehold.co/150x40/8b0000/fff?text=Aleatorio');
+             background-size: cover;
+             color: white; /* Hacemos el texto visible */
+             text-decoration: none; /* Quitamos la línea para que se vea el texto aleatorio */
         }
     </style>
 </head>
@@ -61,12 +109,12 @@
                 <div class="flex items-center space-x-2">
                     <!-- Placeholder de Logos (usamos texto) -->
                     <span class="text-xl font-bold mr-4">PJ</span>
-                    <span class="text-xs">PODER JUDICIAL DEL PERÚ - PUNO, Justicia Honorable, País Respetable</span>
+                    <span class="text-xs">PODER JUDICIAL DEL PERÚ, Justicia Honorable, País Respetable</span>
                 </div>
                 <div class="hidden sm:block text-right">
-                    <div class="font-bold text-xs">Consulta de Expedientes Judiciales - RYNLD</div>
-                    <div class="text-xs">Cortes Superiores de Justicia - RYNLD </div>
-                    <!-- ELEMENTO ACTUALIZADO: Se agregó el ID 'current-datetime' -->
+                    <div class="font-bold text-xs">Consulta de Expedientes Judiciales - Rynld </div>
+                    <div class="text-xs">Cortes Superiores de Justicia - Rynld  </div>
+                    <!-- ELEMENTO ACTUALIZADO: Fecha y hora en tiempo real -->
                     <div id="current-datetime" class="text-[10px]">Cargando fecha y hora...</div>
                 </div>
             </div>
@@ -97,11 +145,11 @@
         <h1 class="text-2xl font-bold text-center text-gray-800 my-6">BÚSQUEDA DE EXPEDIENTES</h1>
         
         <!-- PESTAÑAS DE NAVEGACIÓN -->
-        <div class="flex max-w-2xl mx-auto mb-4 border-b border-gray-400">
-            <button id="tab-filtros" class="flex-1 py-3 tab-active text-center text-sm font-bold uppercase rounded-t-md transition duration-150 ease-in-out">
+        <div class="tab-container max-w-2xl">
+            <button id="tab-filtros" class="flex-1 py-3 tab-active text-center text-sm font-bold uppercase transition duration-150 ease-in-out">
                 Por filtros
             </button>
-            <button id="tab-codigo" class="flex-1 py-3 tab-inactive text-center text-sm font-bold uppercase rounded-t-md transition duration-150 ease-in-out">
+            <button id="tab-codigo" class="flex-1 py-3 tab-inactive text-center text-sm font-bold uppercase transition duration-150 ease-in-out">
                 Por Código de Expediente
             </button>
         </div>
@@ -109,45 +157,118 @@
         <!-- CONTENIDO DEL FORMULARIO (POR FILTROS) -->
         <div id="content-filtros" class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-b-lg shadow-xl border-t-2 border-red-700">
             
-            <form id="busquedaForm" onsubmit="return false;" class="space-y-4">
+            <form id="busquedaFormFiltros" onsubmit="return false;" class="space-y-4">
                 
-                <!-- 1. Distrito Judicial -->
+                <!-- 1. Distrito Judicial (LISTA COMPLETA) -->
                 <div>
                     <label for="distrito" class="form-label block mb-1">Distrito Judicial <span class="required-star">(*)</span></label>
                     <select id="distrito" name="distrito" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
                         <option value="">--SELECCIONAR--</option>
-                        <option value="lima">Lima</option>
-                        <option value="arequipa">Arequipa</option>
+                        <option value="AMAZONAS">AMAZONAS</option>
+                        <option value="ANCASH">ANCASH</option>
+                        <option value="APURIMAC">APURIMAC</option>
+                        <option value="AREQUIPA">AREQUIPA</option>
+                        <option value="AYACUCHO">AYACUCHO</option>
+                        <option value="CAJAMARCA">CAJAMARCA</option>
+                        <option value="CALLAO">CALLAO</option>
+                        <option value="CAÑETE">CAÑETE</option>
+                        <option value="CUSCO">CUSCO</option>
+                        <option value="DEL SANTA">DEL SANTA</option>
+                        <option value="HUANCAVELICA">HUANCAVELICA</option>
+                        <option value="HUANUCO">HUANUCO</option>
+                        <option value="HUAURA">HUAURA</option>
+                        <option value="ICA">ICA</option>
+                        <option value="JUNIN">JUNIN</option>
+                        <option value="LA LIBERTAD">LA LIBERTAD</option>
+                        <option value="LAMBAYEQUE">LAMBAYEQUE</option>
+                        <option value="LIMA">LIMA</option>
+                        <option value="LIMA ESTE">LIMA ESTE</option>
+                        <option value="LIMA NORTE">LIMA NORTE</option>
+                        <option value="LIMA SUR">LIMA SUR</option>
+                        <option value="LORETO">LORETO</option>
+                        <option value="MADRE DE DIOS">MADRE DE DIOS</option>
+                        <option value="MOQUEGUA">MOQUEGUA</option>
+                        <option value="PASCO">PASCO</option>
+                        <option value="PIURA">PIURA</option>
+                        <option value="PUNO">PUNO</option>
+                        <option value="SAN MARTIN">SAN MARTIN</option>
+                        <option value="SELVA CENTRAL">SELVA CENTRAL</option>
+                        <option value="SULLANA">SULLANA</option>
+                        <option value="TACNA">TACNA</option>
+                        <option value="TUMBES">TUMBES</option>
+                        <option value="UCAYALI">UCAYALI</option>
+                        <option value="VENTANILLA - LIMA NOROESTE">VENTANILLA - LIMA NOROESTE</option>
                     </select>
                 </div>
 
-                <!-- 2. Instancia -->
+                <!-- 2. Instancia (LISTA COMPLETA) -->
                 <div>
                     <label for="instancia" class="form-label block mb-1">Instancia <span class="required-star">(*)</span></label>
                     <select id="instancia" name="instancia" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
                         <option value="">--SELECCIONAR--</option>
-                        <option value="csj">CSJ</option>
-                        <option value="juz">JUZ</option>
+                        <option value="JUZGADO DE PAZ LETRADO">JUZGADO DE PAZ LETRADO</option>
+                        <option value="JUZGADO ESPECIALIZADO">JUZGADO ESPECIALIZADO</option>
+                        <option value="JUZGADO MIXTO">JUZGADO MIXTO</option>
+                        <option value="SALA SUPERIOR">SALA SUPERIOR</option>
                     </select>
                 </div>
 
-                <!-- 3. Especialidad -->
+                <!-- 3. Especialidad (LISTA COMPLETA) -->
                 <div>
                     <label for="especialidad" class="form-label block mb-1">Especialidad <span class="required-star">(*)</span></label>
                     <select id="especialidad" name="especialidad" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
                         <option value="">--SELECCIONAR--</option>
-                        <option value="civil">Civil</option>
-                        <option value="penal">Penal</option>
+                        <option value="CIVIL">CIVIL</option>
+                        <option value="FAMILIA CIVIL">FAMILIA CIVIL</option>
+                        <option value="LABORAL">LABORAL</option>
                     </select>
                 </div>
 
-                <!-- 4. Año -->
+                <!-- 4. Año (LISTA COMPLETA) -->
                 <div>
                     <label for="anio" class="form-label block mb-1">Año <span class="required-star">(*)</span></label>
                     <select id="anio" name="anio" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
                         <option value="">--SELECCIONAR--</option>
+                        <option value="2025">2025</option>
                         <option value="2024">2024</option>
                         <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                        <option value="2021">2021</option>
+                        <option value="2020">2020</option>
+                        <option value="2019">2019</option>
+                        <option value="2018">2018</option>
+                        <option value="2017">2017</option>
+                        <option value="2016">2016</option>
+                        <option value="2015">2015</option>
+                        <option value="2014">2014</option>
+                        <option value="2013">2013</option>
+                        <option value="2012">2012</option>
+                        <option value="2011">2011</option>
+                        <option value="2010">2010</option>
+                        <option value="2009">2009</option>
+                        <option value="2008">2008</option>
+                        <option value="2007">2007</option>
+                        <option value="2006">2006</option>
+                        <option value="2005">2005</option>
+                        <option value="2004">2004</option>
+                        <option value="2003">2003</option>
+                        <option value="2002">2002</option>
+                        <option value="2001">2001</option>
+                        <option value="2000">2000</option>
+                        <option value="1999">1999</option>
+                        <option value="1998">1998</option>
+                        <option value="1997">1997</option>
+                        <option value="1996">1996</option>
+                        <option value="1995">1995</option>
+                        <option value="1994">1994</option>
+                        <option value="1993">1993</option>
+                        <option value="1992">1992</option>
+                        <option value="1991">1991</option>
+                        <option value="1990">1990</option>
+                        <option value="1989">1989</option>
+                        <option value="1988">1988</option>
+                        <option value="1987">1987</option>
+                        <option value="1986">1986</option>
                     </select>
                 </div>
 
@@ -161,8 +282,8 @@
 
                 <!-- 6. Parte -->
                 <div>
-                    <label for="parte" class="form-label block mb-1">Parte <span class="required-star">(*)</span></label>
-                    <input type="text" id="parte" name="parte" placeholder="APELLIDO PATERNO Y APELLIDO MATERNO O RAZÓN SOCIAL" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
+                    <label for="parteFiltros" class="form-label block mb-1">Parte <span class="required-star">(*)</span></label>
+                    <input type="text" id="parteFiltros" name="parteFiltros" placeholder="APELLIDO PATERNO Y APELLIDO MATERNO O RAZÓN SOCIAL" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
                     <p class="text-xs text-gray-500 mt-1">Ingresar ambos apellidos (paterno y materno) o la razón social de alguna de las partes involucradas en el proceso, respetando el orden y la forma exacta en que aparecen en cualquiera de las resoluciones del expediente.</p>
                 </div>
 
@@ -175,18 +296,18 @@
                 <div class="pt-4 space-y-2">
                     <label class="form-label block">Escriba el código mostrado</label>
                     <div class="flex items-center space-x-3">
-                        <!-- Captcha Placeholder -->
-                        <div class="captcha-box rounded-md shadow-inner select-none">
-                            DWN4
+                        <!-- Captcha Dinámico -->
+                        <div id="captchaBoxFiltros" class="captcha-box rounded-md shadow-inner select-none captcha-display">
+                            <!-- El código se inserta aquí por JavaScript -->
                         </div>
                         <!-- Botones de Audio y Recarga -->
-                        <button class="text-gray-600 hover:text-red-700 transition duration-150" title="Escuchar código">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                        </button>
-                        <button class="text-gray-600 hover:text-red-700 transition duration-150" title="Recargar código">
+                        <button type="button" class="captcha-btn" title="Recargar código" onclick="generateCaptcha('captchaBoxFiltros')">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M21.5 8a10 10 0 0 0-16.5-7.5l-2.4 2.4"/><path d="M2.5 16a10 10 0 0 0 16.5 7.5l2.4-2.4"/></svg>
                         </button>
-                        <input type="text" id="captcha" name="captcha" required class="p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm w-32" placeholder="Código">
+                        <button type="button" class="captcha-btn" title="Escuchar código">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                        </button>
+                        <input type="text" id="inputCaptchaFiltros" name="inputCaptchaFiltros" required class="p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm w-32" placeholder="Código">
                     </div>
                 </div>
 
@@ -200,33 +321,95 @@
             </form>
         </div>
 
-        <!-- CONTENIDO DEL FORMULARIO (POR CÓDIGO) - Oculto inicialmente -->
-        <div id="content-codigo" class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-b-lg shadow-xl border-t-2 border-red-700 hidden">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">Búsqueda por Código Único</h2>
-            <p class="text-sm text-gray-600">Este es el contenido de la pestaña de búsqueda por código. Aquí irían los campos para ingresar el código único del expediente.</p>
-            <div class="mt-4">
-                <label for="codigoExpediente" class="form-label block mb-1">Código de Expediente <span class="required-star">(*)</span></label>
-                <input type="text" id="codigoExpediente" name="codigoExpediente" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
-            </div>
-            <div class="flex justify-center pt-6">
-                 <button type="submit" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-md shadow-lg transition duration-150 ease-in-out">
-                    BUSCAR CÓDIGO
-                </button>
-            </div>
+        <!-- CONTENIDO DEL FORMULARIO (POR CÓDIGO) -->
+        <div id="content-codigo" class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-b-lg shadow-xl codigo-form-box hidden">
+            
+            <form id="busquedaFormCodigo" onsubmit="return false;" class="space-y-4">
+                
+                <!-- Detalle del formato del código -->
+                <div class="text-center mb-6">
+                    <p class="font-bold text-gray-700 mb-2">Código del expediente:</p>
+                    <!-- Detalle del formato -->
+                    <p class="text-xs text-red-700 mb-4">
+                        (*)(*)(*)(*)(*)-(*)(*)(*)(*)-(*)(*)(*)(*)-(*)(*)(*)-(*)(*)(*)
+                    </p>
+                    <div class="bg-yellow-100 border border-yellow-300 p-3 rounded-md text-sm text-gray-700">
+                        <p class="font-mono font-semibold">
+                            Expediente N°: <span class="text-blue-700">00001</span>-<span class="text-green-700">2005</span>-<span class="text-purple-700">0</span>-<span class="text-red-700">1817</span>-<span class="text-indigo-700">JR</span>-<span class="text-pink-700">CO</span>-<span class="text-teal-700">06</span>
+                        </p>
+                        <p class="mt-2 text-xs">
+                            (N° 1-5 dígitos) - (Año 4 dígitos) - (Secuencia 1 dígito) - (N° 4 dígitos) - (Secuencia 2 caracteres) - (Secuencia 2 caracteres) - (N° 2 dígitos)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Campo de Código de Expediente -->
+                <div>
+                    <label for="codigoExpediente" class="form-label block mb-1">Expediente N° <span class="required-star">(*)</span></label>
+                    <input type="text" id="codigoExpediente" name="codigoExpediente" placeholder="E.g., 00001-2005-0-1817-JR-CO-06" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
+                </div>
+
+                <!-- 6. Parte -->
+                <div>
+                    <label for="parteCodigo" class="form-label block mb-1">Parte <span class="required-star">(*)</span></label>
+                    <input type="text" id="parteCodigo" name="parteCodigo" placeholder="APELLIDO PATERNO Y APELLIDO MATERNO O RAZÓN SOCIAL" required class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm">
+                    <p class="text-xs text-gray-500 mt-1">Ingresar ambos apellidos (paterno y materno) o la razón social de alguna de las partes involucradas en el proceso, respetando el orden y la forma exacta en que aparecen en cualquiera de las resoluciones del expediente.</p>
+                </div>
+
+                <!-- Datos Obligatorios Legend -->
+                <div class="py-2">
+                    <p class="text-xs text-gray-700 italic"><span class="required-star">(*)</span> Datos obligatorios</p>
+                </div>
+
+                <!-- 7. Captcha -->
+                <div class="pt-4 space-y-2">
+                    <label class="form-label block">Escriba el código mostrado</label>
+                    <div class="flex items-center space-x-3">
+                        <!-- Captcha Dinámico -->
+                        <div id="captchaBoxCodigo" class="captcha-box rounded-md shadow-inner select-none captcha-display">
+                             <!-- El código se inserta aquí por JavaScript -->
+                        </div>
+                        <!-- Botones de Audio y Recarga -->
+                        <button type="button" class="captcha-btn" title="Recargar código" onclick="generateCaptcha('captchaBoxCodigo')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M21.5 8a10 10 0 0 0-16.5-7.5l-2.4 2.4"/><path d="M2.5 16a10 10 0 0 0 16.5 7.5l2.4-2.4"/></svg>
+                        </button>
+                        <button type="button" class="captcha-btn" title="Escuchar código">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                        </button>
+                        <input type="text" id="inputCaptchaCodigo" name="inputCaptchaCodigo" required class="p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-sm w-32" placeholder="Código">
+                    </div>
+                </div>
+
+                <!-- Texto informativo -->
+                <p class="text-xs text-gray-700 pt-4">
+                    * La búsqueda se deberá realizar ingresando el número, año y especialidad del expediente tal como se registró inicialmente en el sistema.
+                </p>
+
+                <div class="flex justify-center pt-6">
+                    <button type="submit" class="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-8 rounded-md shadow-lg transition duration-150 ease-in-out">
+                        CONSULTAR
+                    </button>
+                </div>
+            </form>
         </div>
+
+        <!-- NOTA DEL PIE DE PÁGINA SIMULADA -->
+        <footer class="text-center text-xs text-gray-600 mt-12 py-4 border-t border-gray-300">
+            <p>Av. Paseo de la República S/N Palacio de Justicia, Cercado, Lima - Perú</p>
+            <p>Copyright © - 2016 Todos los derechos reservados</p>
+            <p>Recomendado para Chrome, Mozilla Firefox, IExplorer 9 o versiones superiores</p>
+        </footer>
 
     </main>
 
-    <!-- Script para el manejo de pestañas y la hora en tiempo real -->
+    <!-- Script para el manejo de pestañas, la hora en tiempo real y el Captcha -->
     <script>
         // Función para formatear la hora y fecha
         function formatDateTime(date) {
-            // Formatea la fecha (ej: 11/10/2025)
             const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Meses son de 0-11
+            const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = date.getFullYear();
 
-            // Formatea la hora (ej: 21:34:38)
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
             const seconds = String(date.getSeconds()).padStart(2, '0');
@@ -243,10 +426,30 @@
             }
         }
 
+        // Función para generar un código Captcha alfanumérico aleatorio
+        function generateCaptcha(elementId) {
+            const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let captcha = '';
+            for (let i = 0; i < 4; i++) {
+                captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            const captchaBox = document.getElementById(elementId);
+            if (captchaBox) {
+                // Insertamos el texto generado
+                captchaBox.textContent = captcha;
+            }
+            return captcha;
+        }
+
+
         document.addEventListener('DOMContentLoaded', () => {
             // Inicializar y establecer el intervalo para actualizar la hora cada 1 segundo (1000ms)
             updateTime();
             setInterval(updateTime, 1000);
+
+            // Generar el CAPTCHA inicial para ambas pestañas
+            generateCaptcha('captchaBoxFiltros');
+            generateCaptcha('captchaBoxCodigo');
 
             // --- Lógica de pestañas ---
             const tabFiltros = document.getElementById('tab-filtros');
@@ -255,29 +458,38 @@
             const contentCodigo = document.getElementById('content-codigo');
 
             function activateTab(tabId) {
-                // Desactivar todas
-                tabFiltros.classList.remove('tab-active');
-                tabFiltros.classList.add('tab-inactive');
-                tabCodigo.classList.remove('tab-active');
-                tabCodigo.classList.add('tab-inactive');
-                
-                contentFiltros.classList.add('hidden');
-                contentCodigo.classList.add('hidden');
+                // Función auxiliar para manejar clases de activación
+                const setClasses = (tab, content, isActive) => {
+                    tab.classList.toggle('tab-active', isActive);
+                    tab.classList.toggle('tab-inactive', !isActive);
+                    // Ajustamos el color de la pestaña inactiva en el contenedor para que no se vea el borde superior
+                    tab.style.backgroundColor = isActive ? 'var(--pj-red)' : '#A0A0A0';
+
+                    content.classList.toggle('hidden', !isActive);
+                };
+
+                // Desactivar y ocultar todo
+                setClasses(tabFiltros, contentFiltros, false);
+                setClasses(tabCodigo, contentCodigo, false);
 
                 // Activar la seleccionada
                 if (tabId === 'filtros') {
-                    tabFiltros.classList.add('tab-active');
-                    tabFiltros.classList.remove('tab-inactive');
-                    contentFiltros.classList.remove('hidden');
+                    setClasses(tabFiltros, contentFiltros, true);
                 } else if (tabId === 'codigo') {
-                    tabCodigo.classList.add('tab-active');
-                    tabCodigo.classList.remove('tab-inactive');
-                    contentCodigo.classList.remove('hidden');
+                    setClasses(tabCodigo, contentCodigo, true);
                 }
             }
 
-            tabFiltros.addEventListener('click', () => activateTab('filtros'));
-            tabCodigo.addEventListener('click', () => activateTab('codigo'));
+            tabFiltros.addEventListener('click', () => {
+                activateTab('filtros');
+                // Al cambiar de pestaña, recargamos el captcha (buena práctica de UX/Seguridad)
+                generateCaptcha('captchaBoxFiltros');
+            });
+            tabCodigo.addEventListener('click', () => {
+                activateTab('codigo');
+                // Al cambiar de pestaña, recargamos el captcha (buena práctica de UX/Seguridad)
+                generateCaptcha('captchaBoxCodigo');
+            });
             
             // Inicializar la primera pestaña
             activateTab('filtros');
