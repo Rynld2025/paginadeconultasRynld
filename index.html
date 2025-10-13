@@ -255,7 +255,7 @@
     </div>
 
     <footer class="footer-bg text-white text-center py-4 mt-auto">
-        <div class="h-3 bg-repeat-x bg-gray-600 mb-2" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCc+CjxyZWN0IHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCcgZmlsbD0nI2Q1ZDVkNScvPgo8cmVjdCB4PScxMycgeT0nMTMnIHdpZHRoPScxMiMgaGVpZ2h0PScxMiIgZmlsbD0nIzhjOGM4YycgLz4KPHJlY3QgeD0nMjUnIHk9JzI1JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM4YzhjOGMnIC8+CjxyZWN0IHg9JzEzJyB5PScyNScgd2lkdGg9JzEyJyBoZWlnaHQ9JzEyJyBmaWxsPScjYmJiYmJiJyAvPgo8cmVjdCB4PScyNScgeT0nMTMnIHdpZHRoPScxMiMgaGVpZ2h0PScxMiIgZmlsbD0nI2JiYmJmJyAvPgo8cmVjdCB4PScxJyB5PScxJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPHJlY3QgeD0nNDMnIHk9JzM3JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPC9zdmc+'); background-size: 50px 50px;"></div>
+        <div class="h-3 bg-repeat-x bg-gray-600 mb-2" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCc+CjxyZWN0IHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCcgZmlsbD0nI2Q1ZDVkNScvPgo8cmVjdCB4PScx十三章IHk9JzEzJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM4YzhjOGMnIC8+CjxyZWN0IHg9JzI1JyB5PScyNScgd2lkdGg9JzEyJyBoZWlnaHQ9JzEyJyBmaWxsPScjOGM4YzhjJyAvPgo8cmVjdCB4PScx十三章IHk9JzI1JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyNiYmJiYmInIC8+CjxyZWN0IHg9JzI1JyB5PScx十三章IHdpZHRoPScxMiMgaGVpZ2h0PScxMiIgZmlsbD0nI2JiYmJmJyAvPgo8cmVjdCB4PScxJyB5PScxJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPHJlY3QgeD0nNDMnIHk9JzM3JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPC9zdmc+'); background-size: 50px 50px;"></div>
         
         <p class="text-sm font-light mb-1">Av. Paseo de la República S/N Palacio de Justicia, Cercado, Lima - Perú</p>
         <p class="text-xs font-semibold mb-1">Copyright ® - 2016 Todos los derechos reservados</p>
@@ -289,7 +289,7 @@
             URL_PDF_HEADER_KEY: 'URL EXPEDIENTE' 
         };
 
-        // --- Rango de Columas para ETAPAS DEL PROCESO ---
+        // --- Rango de Columnas para ETAPAS DEL PROCESO ---
         // U es el índice 20 (U=20)
         // AO es el índice 40 (AO=40)
         const ETAPAS_START_INDEX = 20; // Columna U
@@ -446,12 +446,19 @@
             document.getElementById("resultContainer").classList.remove("hidden");
         }
         
-        // Vuelve al formulario de búsqueda
+        // Vuelve al formulario de búsqueda Y LIMPIA LOS CAMPOS
         function mostrarBusqueda() {
             document.getElementById("resultContainer").classList.add("hidden");
             document.getElementById("searchContainer").classList.remove("hidden");
             document.getElementById("reporteDetallado").innerHTML = "";
-            generarCaptcha();
+            generarCaptcha(); // Regenera el captcha
+
+            // --- NUEVO: Limpia los campos de búsqueda ---
+            document.getElementById("distrito").value = "--SELECCIONAR";
+            document.getElementById("instancia").value = "--SELECCIONAR";
+            updateEspecialidad(); // Actualiza especialidad después de cambiar instancia
+            document.getElementById("anio").value = "";
+            document.getElementById("expediente").value = "";
         }
 
 
@@ -599,6 +606,7 @@
                     // PASO CRÍTICO: Obtenemos el encabezado para el PDF
                     const urlPdfHeader = COLUMN_INDICES.URL_PDF_HEADER_KEY; 
                     
+                    mostrarResults(); // Ahora mostramos resultados ANTES de generar el HTML del reporte
                     mostrarResultadosDetallados(headers, foundMatch, expedienteHeader, urlPdfHeader); 
                     showMessage(`Expediente encontrado y detallado.`, 'success');
                 } else {
@@ -609,7 +617,7 @@
 
                     document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600">${finalErrorDisplay}</div>`;
                     showMessage("Búsqueda fallida: " + errorReason.replace(/\*\*/g, '').replace(/\<br\>/g, ' '), 'error');
-                    mostrarResults(); 
+                    mostrarResults(); // Asegurarse de que el contenedor de resultados se muestra para el mensaje de error
                     console.error("DIAGNÓSTICO DE FALLO:", errorReason);
                 }
 
@@ -650,7 +658,7 @@
             // 4. Insertar todos los reportes
             reporteDetalladoDiv.innerHTML = mainReportHtml + partesReportHtml + etapasReportHtml;
 
-            mostrarResults(); // Muestra el contenedor de resultados
+            // mostrarResults(); // Esta llamada se ha movido a buscarExpediente() para que se muestre antes si hay error
         }
 
         /**
