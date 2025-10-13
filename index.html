@@ -11,16 +11,33 @@
         .header-bg {
             background-color: #8b0000; /* Dark Red */
         }
-        /* Estilos de tabla simples para Tailwind */
-        .custom-table th, .custom-table td {
-            border: 1px solid #e5e7eb;
-            padding: 12px;
-            text-align: left;
+        /* Estilos de reporte detallado */
+        .report-section {
+            background-color: #333; /* Dark header for sections */
+            color: white;
+            padding: 10px 20px;
+            font-weight: bold;
+            font-size: 1.125rem; /* text-lg */
+            border-radius: 0.5rem 0.5rem 0 0;
+            margin-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .custom-table th {
-            background-color: #f3f4f6;
+        .report-grid-item {
+            display: grid;
+            grid-template-columns: 140px 1fr; /* Ajustado el ancho de la etiqueta */
+            gap: 0.5rem;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .report-grid-item strong {
+            color: #333;
             font-weight: 600;
-            color: #1f2937;
+        }
+        .report-grid-item span {
+            color: #555;
+            font-weight: normal;
         }
     </style>
     <script>
@@ -132,11 +149,10 @@
                     </svg>
                     Nueva Búsqueda
                 </button>
-                <h3 class="text-2xl font-semibold mb-4 text-gray-800">Resultado de Búsqueda</h3>
-                <div id="tablaResultados" class="overflow-x-auto">
-                    <!-- La tabla se inserta aquí -->
-                </div>
                 <div id="loadingIndicator" class="hidden text-center mt-6 text-lg font-medium text-judicial-red">Cargando resultados...</div>
+                
+                <!-- Resultados del Reporte Detallado se insertan aquí -->
+                <div id="reporteDetallado"></div>
             </div>
 
         </div>
@@ -250,7 +266,7 @@
             
             // Mostrar indicador de carga
             document.getElementById("loadingIndicator").classList.remove("hidden");
-            document.getElementById("tablaResultados").innerHTML = "";
+            document.getElementById("reporteDetallado").innerHTML = "";
 
 
             // 3. Conectar y Buscar en Google Sheets
@@ -273,12 +289,12 @@
                 // --- BÚSQUEDA DINÁMICA DE COLUMNAS CLAVE ---
                 const normalizedHeaders = headers.map(h => h.toUpperCase().trim());
                 
-                // Buscamos columnas que contengan 'EXPEDIENTE', 'EXP', 'N°', 'N' etc.
-                let expIdx = normalizedHeaders.findIndex(h => h.includes('EXPEDIENTE') || h.includes('EXP'));
-                // Buscamos columnas que contengan 'AÑO' o 'ANIO'
+                // Buscamos la columna de Expediente
+                let expIdx = normalizedHeaders.findIndex(h => h.includes('EXPEDIENTE') || h.includes('EXP') || h.includes('N°'));
+                // Buscamos la columna de Año
                 let anioIdx = normalizedHeaders.findIndex(h => h.includes('AÑO') || h.includes('ANIO'));
 
-                // Fallback: Si no se encuentran por nombre, asumimos los índices 0 y 1 (como en el código anterior)
+                // Fallback: Si no se encuentran por nombre, asumimos los índices 0 y 1 (más común)
                 if (expIdx === -1) expIdx = 0;
                 if (anioIdx === -1) anioIdx = 1;
                 
@@ -289,74 +305,191 @@
                 const searchExpediente = expediente.toUpperCase();
                 const searchAnio = anio.toUpperCase();
 
-                const resultados = rows
+                // Mapear filas a objetos para facilitar la visualización por nombre de encabezado
+                const dataObjects = rows
                     .map(r => r.c.map(c => (c ? c.v : "")))
-                    .filter(r => {
-                        // Asegurar que la fila tiene suficientes columnas
-                        if (r.length <= Math.max(expIdx, anioIdx)) return false; 
+                    .map(r => {
+                        // Crear un objeto donde la clave es el encabezado y el valor es el dato de la celda
+                        const obj = {};
+                        headers.forEach((header, index) => {
+                            obj[header] = r[index] || "";
+                        });
+                        return obj;
+                    })
+                    .filter(obj => {
+                        // Usar los índices detectados para filtrar con mayor precisión
+                        const rowExpediente = (obj[headers[expIdx]] || "").toString().toUpperCase();
+                        const rowAnio = (obj[headers[anioIdx]] || "").toString().toUpperCase();
                         
-                        const rowExpediente = (r[expIdx] || "").toString().toUpperCase();
-                        const rowAnio = (r[anioIdx] || "").toString().toUpperCase();
-
-                        // La búsqueda se mantiene con .includes() (coincidencia parcial)
+                        // Filtro: Debe incluir el número de expediente Y el año
                         return rowExpediente.includes(searchExpediente) && rowAnio.includes(searchAnio);
                     });
 
                 document.getElementById("loadingIndicator").classList.add("hidden");
 
-                if (resultados.length > 0) {
-                    mostrarResultados(headers, resultados);
-                    showMessage(`Se encontraron ${resultados.length} expedientes.`, 'success');
+                if (dataObjects.length > 0) {
+                    // Solo mostramos el primer resultado detallado, asumiendo una coincidencia única
+                    mostrarResultadosDetallados(headers, dataObjects[0]); 
+                    showMessage(`Expediente encontrado y detallado.`, 'success');
                 } else {
-                    mostrarResultados(headers, []);
+                    document.getElementById("reporteDetallado").innerHTML = '<div class="text-center p-8 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-600"><p class="font-semibold">No se encontraron expedientes que coincidan.</p><p class="text-sm mt-1">Verifique el N° Expediente y el Año.</p></div>';
                     showMessage("No se encontraron expedientes con los criterios proporcionados.", 'error');
                 }
 
             } catch (e) {
                 document.getElementById("loadingIndicator").classList.add("hidden");
-                showMessage(`Error al conectar o procesar los datos de Drive. Verifique que la hoja esté 'Publicada en la web'. Detalle: ${e.message}`, 'error');
+                showMessage(`Error al conectar o procesar los datos de Drive. Detalle: ${e.message}`, 'error');
                 console.error("Error al obtener o parsear Google Sheets:", e);
                 mostrarBusqueda(); 
             }
         }
 
-        // Muestra la tabla de resultados
-        function mostrarResultados(headers, data) {
-            const tablaResultadosDiv = document.getElementById("tablaResultados");
-            tablaResultadosDiv.innerHTML = ""; 
+        /**
+         * Genera el HTML del reporte detallado (sección principal y partes procesales).
+         * @param {string[]} headers - Los encabezados de las columnas (claves del objeto data).
+         * @param {Object} data - El objeto de datos de la fila coincidente.
+         */
+        function mostrarResultadosDetallados(headers, data) {
+            const reporteDetalladoDiv = document.getElementById("reporteDetallado");
+            reporteDetalladoDiv.innerHTML = ""; 
 
-            if (data.length === 0) {
-                tablaResultadosDiv.innerHTML = '<div class="text-center p-8 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-600"><p class="font-semibold">No se encontraron expedientes que coincidan.</p><p class="text-sm mt-1">Verifique el N° Expediente, el Año y que su hoja de Drive esté publicada correctamente.</p></div>';
-            } else {
-                const tabla = document.createElement("table");
-                tabla.className = "custom-table w-full";
-                const thead = document.createElement("thead");
-                const trh = document.createElement("tr");
+            // --- 1. Mapeo de datos para el reporte de EXPEDIENTE ---
+            // Las claves DEBEN coincidir EXACTAMENTE con los encabezados del Google Sheet
+            const fieldMapExpediente = {
+                // Columna del Excel : Etiqueta a mostrar
+                'N° Expediente': 'N° EXPEDIENTE', 
+                'ORGANO JURISDICCIONAL': 'ÓRGANO JURISDICCIONAL',
+                'JUEZ': 'JUEZ',
+                'FECHA DE INICIO': 'FECHA DE INICIO',
+                'MATERIA(S)': 'MATERIA(S)',
+                'ETAPA PROCESAL': 'ETAPA PROCESAL',
+                'UBICACION': 'UBICACIÓN',
+                'SUMILLA': 'SUMILLA',
+                'ESPECIALISTA LEGAL': 'ESPECIALISTA LEGAL',
+                'PROCESO': 'PROCESO',
+                'ESTADO': 'ESTADO',
+                'FECHA CONCLUSION': 'FECHA CONCLUSIÓN',
+                'MOTIVO CONCLUSION': 'MOTIVO CONCLUSIÓN',
+            };
 
-                // Crear encabezados de columna
-                headers.forEach(h => {
-                    const th = document.createElement("th");
-                    th.textContent = h;
-                    trh.appendChild(th);
+            let leftGridItems = '';
+            let rightGridItems = '';
+            let fieldIndex = 0;
+            const fieldsToShow = Object.keys(fieldMapExpediente);
+
+            fieldsToShow.forEach(sheetHeader => {
+                const label = fieldMapExpediente[sheetHeader];
+                const value = data[sheetHeader] || '---'; // Usar '---' si el valor es nulo o vacío
+                
+                // Si la columna existe en la data del Sheet, la mostramos
+                if (data.hasOwnProperty(sheetHeader) || sheetHeader === 'N° Expediente') { // N° Expediente se usa como campo clave
+                    const itemHtml = `
+                        <div class="report-grid-item">
+                            <strong class="text-xs sm:text-sm text-gray-700 uppercase">${label}:</strong>
+                            <span class="text-sm font-semibold text-gray-900 break-words">${value}</span>
+                        </div>
+                    `;
+
+                    // Distribución en dos columnas
+                    if (fieldIndex % 2 === 0) {
+                        leftGridItems += itemHtml;
+                    } else {
+                        rightGridItems += itemHtml;
+                    }
+                    fieldIndex++;
+                }
+            });
+
+
+            // --- Generar Reporte de Expediente (Sección Superior) ---
+            const mainReportHtml = `
+                <div class="report-section rounded-t-xl mt-0 bg-judicial-red">
+                    REPORTE DE EXPEDIENTE
+                    <span class="text-sm font-normal">${data['N° Expediente'] || 'N/A'}</span>
+                </div>
+                <div class="bg-white p-6 border-x border-b border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                        <div class="space-y-1">${leftGridItems}</div>
+                        <div class="space-y-1">${rightGridItems}</div>
+                    </div>
+                </div>
+            `;
+            
+            // --- 2. Generar Partes Procesales (Sección Inferior) ---
+
+            // ** Columnas de Partes Procesales solicitadas **
+            const parteDemandante = data['PARTE DEMANDANTE'] || '---';
+            const parteDemandado = data['PARTE DEMANDADO'] || '---';
+            const tipoPersona = data['TIPO DE PERSONA'] || '---'; 
+
+            // Se asume que los nombres de las partes pueden estar separados por salto de línea (\n)
+            const demandantes = parteDemandante.split('\n').filter(p => p.trim() !== '' && p.trim() !== '---');
+            const demandados = parteDemandado.split('\n').filter(p => p.trim() !== '' && p.trim() !== '---');
+
+            let partesRowsHtml = '';
+
+            // Llenar tabla con Demandantes
+            if (demandantes.length > 0) {
+                demandantes.forEach(name => {
+                    partesRowsHtml += `
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="py-3 px-4 text-judicial-red font-bold">DEMANDANTE</td>
+                            <td class="py-3 px-4">${tipoPersona}</td>
+                            <td class="py-3 px-4 font-medium" colspan="3">${name.trim()}</td>
+                        </tr>
+                    `;
                 });
-                thead.appendChild(trh);
-                tabla.appendChild(thead);
-
-                // Crear filas de datos
-                const tbody = document.createElement("tbody");
-                data.forEach(row => {
-                    const tr = document.createElement("tr");
-                    tr.className = "hover:bg-gray-50 transition duration-150";
-                    row.forEach(val => {
-                        const td = document.createElement("td");
-                        td.textContent = val;
-                        tr.appendChild(td);
-                    });
-                    tbody.appendChild(tr);
-                });
-                tabla.appendChild(tbody);
-                tablaResultadosDiv.appendChild(tabla);
             }
+
+            // Llenar tabla con Demandados
+            if (demandados.length > 0) {
+                demandados.forEach(name => {
+                    partesRowsHtml += `
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="py-3 px-4 text-blue-800 font-bold">DEMANDADO</td>
+                            <td class="py-3 px-4">${tipoPersona}</td>
+                            <td class="py-3 px-4 font-medium" colspan="3">${name.trim()}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Si no hay información de partes, mostrar una fila de "No hay partes"
+            if (demandantes.length === 0 && demandados.length === 0) {
+                partesRowsHtml = `
+                    <tr class="text-center">
+                        <td class="py-3 px-4 text-gray-500 italic" colspan="5">No hay información de Partes Procesales disponible para este expediente o la data es '---'.</td>
+                    </tr>
+                `;
+            }
+
+
+            const partesReportHtml = `
+                <div class="report-section bg-gray-700">
+                    PARTES PROCESALES
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
+                </div>
+                <div class="bg-white p-6 border-x border-b border-gray-200 rounded-b-xl overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
+                                <th class="py-3 px-4 font-bold text-left">ROL</th>
+                                <th class="py-3 px-4 font-bold text-left">TIPO DE PERSONA</th>
+                                <th class="py-3 px-4 font-bold text-left" colspan="3">NOMBRE / RAZÓN SOCIAL</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 whitespace-nowrap text-sm text-gray-700">
+                            ${partesRowsHtml}
+                        </tbody>
+                    </table>
+                    <p class="mt-4 text-xs text-gray-500">Nota: La información se extrae de las columnas 'PARTE DEMANDANTE', 'PARTE DEMANDADO' y 'TIPO DE PERSONA' de la hoja de cálculo.</p>
+                </div>
+            `;
+
+
+            // 3. Insertar ambos reportes
+            reporteDetalladoDiv.innerHTML = mainReportHtml + partesReportHtml;
+
 
             document.getElementById("searchContainer").classList.add("hidden");
             document.getElementById("resultContainer").classList.remove("hidden");
@@ -366,7 +499,7 @@
         function mostrarBusqueda() {
             document.getElementById("resultContainer").classList.add("hidden");
             document.getElementById("searchContainer").classList.remove("hidden");
-            document.getElementById("tablaResultados").innerHTML = "";
+            document.getElementById("reporteDetallado").innerHTML = "";
             generarCaptcha();
         }
     </script>
