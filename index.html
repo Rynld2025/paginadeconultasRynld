@@ -431,7 +431,8 @@
 
                 // 5. Filtrar datos con diagnóstico de error (usando índices de columna fijos)
                 let foundMatch = null;
-                let errorReason = "No se encontró ninguna fila con ese N° Expediente.";
+                // CAMBIO SOLICITADO ANTERIOR: Mensaje de error simplificado
+                let errorReason = "No se encontró el Expediente N°: " + expediente + ".";
 
                 // Transformar las filas de Google Sheets a objetos usando los encabezados
                 const allDataObjects = rows.map(r => {
@@ -452,7 +453,7 @@
                 });
                 
                 if (expedientMatches.length === 0) {
-                    errorReason = `No se encontró el Expediente N°: ${expediente} en la columna "${headers[COLUMN_INDICES.EXPEDIENTE]}" de su base de datos.`;
+                    // errorReason ya está establecido al inicio con el mensaje simplificado.
                 } else {
                     // 5.2. SEGUNDO FILTRO Y DIAGNÓSTICO: Validar los 4 criterios secundarios (A, B, C, D)
                     for (const obj of expedientMatches) {
@@ -502,7 +503,12 @@
                     mostrarResultadosDetallados(headers, foundMatch, expedienteHeader, urlPdfHeader); 
                     showMessage(`Expediente encontrado y detallado.`, 'success');
                 } else {
-                    document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600"><p class="font-semibold text-red-700">Error de Coincidencia:</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">Asegúrese de que el Expediente, Año y el Distrito/Instancia/Especialidad en su hoja de cálculo coincidan lo suficiente, ignorando espacios y guiones.</p></div>`;
+                    // Se usa el errorReason simplificado aquí
+                    const finalErrorDisplay = errorReason.startsWith("No se encontró") 
+                        ? `<p class="font-semibold text-red-700">Error de Coincidencia:</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">Asegúrese de que el Expediente, Año y el Distrito/Instancia/Especialidad en su hoja de cálculo coincidan lo suficiente, ignorando espacios y guiones.</p>`
+                        : `<p class="font-semibold text-red-700">Error de Coincidencia:</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">El N° Expediente fue encontrado, pero los filtros secundarios no coincidieron.</p>`;
+
+                    document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600">${finalErrorDisplay}</div>`;
                     showMessage("Búsqueda fallida: " + errorReason.replace(/\*\*/g, '').replace(/\<br\>/g, ' '), 'error');
                     mostrarResults(); 
                     console.error("DIAGNÓSTICO DE FALLO:", errorReason);
@@ -702,14 +708,12 @@
                             ${partesRowsHtml}
                         </tbody>
                     </table>
-                    <p class="mt-4 text-xs text-gray-500">Nota: La información se extrae de las columnas de Partes Procesales y Tipo de Persona de la hoja de cálculo.</p>
                 </div>
             `;
         }
 
         /**
          * Auxiliar para generar el HTML de la sección de ETAPAS DEL PROCESO.
-         * MODIFICADO: El texto del botón ahora es fijo: "VER DOCUMENTO".
          */
         function generarReporteEtapas(headers, data) {
             let etapas = [];
@@ -727,7 +731,7 @@
                     
                     // Comprobación CRÍTICA: Si el valor es una URL, generamos un botón simplificado
                     if (isUrl(rawValue)) {
-                        // El texto del botón ahora es fijo: "VER DOCUMENTO"
+                        // El texto del botón es fijo: "VER DOCUMENTO"
                         const buttonText = "VER DOCUMENTO";
                         
                         // Generamos el botón con un ícono de enlace
@@ -787,7 +791,6 @@
                     <div class="space-y-1">
                         ${etapasHtml}
                     </div>
-                    <p class="mt-4 text-xs text-gray-500">Nota: Esta sección muestra la información disponible desde la **Columna U hasta la Columna AO** (incluyendo los títulos de la Fila 1).</p>
                 </div>
             `;
         }
