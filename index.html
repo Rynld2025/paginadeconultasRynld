@@ -113,6 +113,37 @@
             ring-color: rgba(3, 102, 53, 0.5); /* focus:ring-judicial-red (con opacidad) */
             ring-opacity: 0.5;
         }
+        
+        /* Estilos para el contenido de Preguntas Frecuentes */
+        .faq-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+        .faq-question {
+            color: #036635; /* Verde de la identidad visual */
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 700; /* bold */
+            margin-bottom: 4px;
+        }
+        .faq-answer {
+            color: #4b5563; /* text-gray-600 */
+            font-size: 1rem; /* text-base */
+            line-height: 1.6;
+        }
+        /* Estilo para los enlaces de navegación como texto simple */
+        .nav-link {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: 0.25rem;
+            text-transform: uppercase;
+        }
+        .nav-link:hover {
+            background-color: #024a27; /* Verde más oscuro en hover */
+        }
 
     </style>
     <script>
@@ -150,116 +181,187 @@
 
     <header class="nav-bg text-white py-2 shadow-lg">
         <div class="container mx-auto px-4 flex justify-between items-center text-sm font-semibold">
-            <div class="flex space-x-6">
-                <a href="#" class="hover:text-gray-200 transition duration-150">INICIO</a>
-                <a href="#" class="hover:text-gray-200 transition duration-150">VIDEOTUTORIALES</a>
-                <a href="#" class="hover:text-gray-200 transition duration-150">PREGUNTAS FRECUENTES</a>
+            <div class="flex space-x-2">
+                <div class="nav-link" onclick="showSection('search')">INICIO</div>
+                <div class="nav-link" onclick="showSection('video')">VIDEOTUTORIALES</div>
+                <div class="nav-link" onclick="showSection('faq')">PREGUNTAS FRECUENTES</div>
             </div>
             <div id="timeInfo" class="text-right text-xs">
-                </div>
+            </div>
         </div>
     </header>
     
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
         <div id="comunicadoBox" class="w-full max-w-4xl mx-auto comunicado-box p-4 text-center rounded-lg shadow-md mb-8">
-            <h3 class="text-base font-extrabold text-judicial-red mb-2">COMUNICADO</h3>
+            <h3 class="text-base font-extrabold text-judicial-red mb-2">FACULTAD DE CIENCIAS JURIDICAS Y POLITICAS - TRABAJO PRESENTADO: </h3>
             <p class="text-sm text-gray-700 leading-relaxed">
-                A partir de la fecha, se ha incluido un nuevo campo como medida técnica de protección, para que solo las partes puedan acceder a sus expedientes; a requerimiento de la Autoridad Nacional de Protección de Datos Personales y la Dirección de Fiscalización e Instrucción del Ministerio de Justicia y Derechos Humanos - MINJUSDH.
+                Alumna: YULISA CHATA QUISPE 
             </p>
             <p class="text-xs font-semibold text-gray-800 mt-2">
                 Al amparo de la ley N° 29733, Ley de Protección de Datos Personales.
             </p>
         </div>
         
-        <div class="w-full max-w-4xl mx-auto">
+        <div class="w-full max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-100" id="mainContentContainer">
             
-            <p class="text-sm text-gray-600 font-semibold mb-3 italic">* La búsqueda se deberá realizar ingresando el número, año y especialidad del expediente tal como se registró inicialmente en el sistema.</p>
-            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-100" id="searchContainer">
-                <h2 class="text-2xl font-semibold mb-6 text-gray-800">BÚSQUEDA DE EXPEDIENTES</h2>
+            <div id="sectionSearch" class="content-section">
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="distrito" class="block text-sm font-medium text-gray-700 mb-1">Distrito Judicial (*)</label>
-                        <select id="distrito" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
-                            <option>--SELECCIONAR</option>
-                            <option>AMAZONAS</option><option>ANCASH</option><option>APURIMAC</option>
-                            <option>AREQUIPA</option><option>AYACUCHO</option><option>CAJAMARCA</option>
-                            <option>CALLAO</option><option>CAÑETE</option><option>CUSCO</option>
-                            <option>DEL SANTA</option><option>HUANCAVELICA</option><option>HUANUCO</option>
-                            <option>HUAURA</option><option>ICA</option><option>JUNIN</option>
-                            <option>LA LIBERTAD</option><option>LAMBAYEQUE</option><option>LIMA</option>
-                            <option>LIMA ESTE</option><option>LIMA NORTE</option><option>LIMA SUR</option>
-                            <option>LORETO</option><option>MADRE DE DIOS</option><option>MOQUEGUA</option>
-                            <option>PASCO</option><option>PIURA</option><option>PUNO</option>
-                            <option>SAN MARTIN</option><option>SELVA CENTRAL</option><option>SULLANA</option>
-                            <option>TACNA</option><option>TUMBES</option><option>UCAYALI</option>
-                            <option>VENTANILLA - LIMA NOROESTE</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="instancia" class="block text-sm font-medium text-gray-700 mb-1">Instancia (*)</label>
-                        <select id="instancia" onchange="updateEspecialidad()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
-                            <option>--SELECCIONAR</option>
-                            <option>JUZGADO DE PAZ LETRADO</option>
-                            <option>JUZGADO ESPECIALIZADO</option>
-                            <option>JUZGADO MIXTO</option>
-                            <option>SALA SUPERIOR</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="especialidad" class="block text-sm font-medium text-gray-700 mb-1">Especialidad (*)</label>
-                        <select id="especialidad" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
-                            <option>--SELECCIONAR</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="anio" class="block text-sm font-medium text-gray-700 mb-1">Año (*)</label>
-                        <input type="number" id="anio" placeholder="Ejemplo: 2025" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150" min="1900" max="2100">
-                    </div>
-                </div>
+                <p class="text-sm text-gray-600 font-semibold mb-3 italic">* La búsqueda se deberá realizar ingresando el número, año y especialidad del expediente tal como se registró inicialmente en el sistema.</p>
                 
-                <div class="mt-4">
-                    <label for="expediente" class="block text-sm font-medium text-gray-700 mb-1">N° Expediente (*)</label>
-                    <input type="text" id="expediente" placeholder="Ejemplo: 12345" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
-                </div>
+                <div id="searchContainer">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">BÚSQUEDA DE EXPEDIENTES</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="distrito" class="block text-sm font-medium text-gray-700 mb-1">Distrito Judicial (*)</label>
+                            <select id="distrito" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
+                                <option>--SELECCIONAR</option>
+                                <option>AMAZONAS</option><option>ANCASH</option><option>APURIMAC</option>
+                                <option>AREQUIPA</option><option>AYACUCHO</option><option>CAJAMARCA</option>
+                                <option>CALLAO</option><option>CAÑETE</option><option>CUSCO</option>
+                                <option>DEL SANTA</option><option>HUANCAVELICA</option><option>HUANUCO</option>
+                                <option>HUAURA</option><option>ICA</option><option>JUNIN</option>
+                                <option>LA LIBERTAD</option><option>LAMBAYEQUE</option><option>LIMA</option>
+                                <option>LIMA ESTE</option><option>LIMA NORTE</option><option>LIMA SUR</option>
+                                <option>LORETO</option><option>MADRE DE DIOS</option><option>MOQUEGUA</option>
+                                <option>PASCO</option><option>PIURA</option><option>PUNO</option>
+                                <option>SAN MARTIN</option><option>SELVA CENTRAL</option><option>SULLANA</option>
+                                <option>TACNA</option><option>TUMBES</option><option>UCAYALI</option>
+                                <option>VENTANILLA - LIMA NOROESTE</option>
+                            </select>
+                        </div>
 
-                <div class="mt-6 flex flex-col sm:flex-row items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div class="text-sm font-medium text-gray-700 shrink-0">Verificación de seguridad:</div>
-                    <div class="captcha flex items-center gap-4 flex-grow">
-                        <span class="captcha-code text-2xl font-extrabold tracking-widest bg-gray-300 text-gray-800 px-4 py-2 rounded-lg select-none shadow-inner" id="captchaCode"></span>
-                        <input type="text" id="captchaInput" placeholder="Ingrese el código" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 uppercase" maxlength="5">
+                        <div>
+                            <label for="instancia" class="block text-sm font-medium text-gray-700 mb-1">Instancia (*)</label>
+                            <select id="instancia" onchange="updateEspecialidad()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
+                                <option>--SELECCIONAR</option>
+                                <option>JUZGADO DE PAZ LETRADO</option>
+                                <option>JUZGADO ESPECIALIZADO</option>
+                                <option>JUZGADO MIXTO</option>
+                                <option>SALA SUPERIOR</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="especialidad" class="block text-sm font-medium text-gray-700 mb-1">Especialidad (*)</label>
+                            <select id="especialidad" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
+                                <option>--SELECCIONAR</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="anio" class="block text-sm font-medium text-gray-700 mb-1">Año (*)</label>
+                            <input type="number" id="anio" placeholder="Ejemplo: 2025" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150" min="1900" max="2100">
+                        </div>
                     </div>
+                    
+                    <div class="mt-4">
+                        <label for="expediente" class="block text-sm font-medium text-gray-700 mb-1">N° Expediente (*)</label>
+                        <input type="text" id="expediente" placeholder="Ejemplo: 12345" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
+                    </div>
+
+                    <div class="mt-6 flex flex-col sm:flex-row items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div class="text-sm font-medium text-gray-700 shrink-0">Verificación de seguridad:</div>
+                        <div class="captcha flex items-center gap-4 flex-grow">
+                            <span class="captcha-code text-2xl font-extrabold tracking-widest bg-gray-300 text-gray-800 px-4 py-2 rounded-lg select-none shadow-inner" id="captchaCode"></span>
+                            <input type="text" id="captchaInput" placeholder="Ingrese el código" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 uppercase" maxlength="5">
+                        </div>
+                    </div>
+
+                    <button onclick="buscarExpediente()" class="consultar-button mt-6">
+                        CONSULTAR EXPEDIENTE
+                    </button>
                 </div>
 
-                <button onclick="buscarExpediente()" class="consultar-button">
-                    CONSULTAR EXPEDIENTE
-                </button>
+                <div class="mt-8 result-container hidden" id="resultContainer">
+                    <button onclick="mostrarBusqueda()" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-xl transition duration-150 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                        Nueva Búsqueda
+                    </button>
+                    <div id="loadingIndicator" class="hidden text-center mt-6 text-lg font-medium text-judicial-red">Cargando resultados...</div>
+                    
+                    <div id="reporteDetallado"></div>
+                </div>
+
             </div>
-
-            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl mt-8 border border-gray-100 result-container hidden" id="resultContainer">
-                <button onclick="mostrarBusqueda()" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-xl transition duration-150 mb-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                    </svg>
-                    Nueva Búsqueda
-                </button>
-                <div id="loadingIndicator" class="hidden text-center mt-6 text-lg font-medium text-judicial-red">Cargando resultados...</div>
+            <div id="sectionVideo" class="content-section hidden">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">GUÍA VISUAL DEL SISTEMA</h2>
                 
-                <div id="reporteDetallado"></div>
-            </div>
+                <div class="w-full aspect-video bg-gray-200 rounded-lg overflow-hidden shadow-xl">
+                    <iframe 
+                        src="https://www.youtube.com/embed/5DZBJXYF0Tk" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen 
+                        class="w-full h-full"
+                        title="Video Tutorial - UNIVERSIDAD NACIONAL DEL ALTIPLANO">
+                    </iframe>
+                </div>
 
-        </div>
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-gray-600 italic">Este video proporciona una guía introductoria sobre las actividades de la universidad, pero su estructura de reproducción es similar a un tutorial del sistema de consulta.</p>
+                </div>
+            </div>
+            <div id="sectionFaq" class="content-section hidden">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">PREGUNTAS FRECUENTES (FAQ)</h2>
+                
+                <div class="space-y-4 divide-y divide-gray-100">
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">¿SE DEBE HACER ALGÚN TIPO DE PAGO PARA REALIZAR LAS BÚSQUEDAS?</div>
+                        <div class="faq-answer">
+                            <span class="font-bold text-judicial-red">NO</span>, el sistema es gratuito y de libre acceso al público en general.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">¿QUÉ ME OFRECE EL SISTEMA?</div>
+                        <div class="faq-answer">
+                            El sistema te permite realizar búsquedas de un expediente. Se puede realizar búsquedas de los expedientes judiciales de la corte superior, tanto por código o ingresando ciertos datos pertenecientes al expediente. Se puede visualizar las resoluciones emitidas por las cortes, y la información en tiempo real.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">¿CÓMO BUSCAR MI EXPEDIENTE?</div>
+                        <div class="faq-answer">
+                            Ingresar a: <a href="http://cej.pj.gob.pe/cej/" target="_blank" class="text-blue-600 hover:text-blue-800 underline">http://cej.pj.gob.pe/cej/</a>, seleccionar el tipo de búsqueda (por codigo o por filtro), seleccionar o ingresar los datos solicitados y click en el botón Consultar. Para un mejor manejo del Sistema, se sugiere visualizar la página de **Video Tutoriales**.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">¿QUÉ SON LOS DISTRITOS JUDICIALES?</div>
+                        <div class="faq-answer">
+                            Son áreas de competencia de una determinada Corte Superior establecidas por ley.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">¿QUÉ SON LAS INSTANCIAS?</div>
+                        <div class="faq-answer">
+                            Son jerarquías que se maneja en pirámide de justicia.
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">¿QUÉ SON LAS ESPECIALIDADES?</div>
+                        <div class="faq-answer">
+                            Es una clasificación del expediente, el cual puede ser de tipo **Civil**, **Familia**, **Laboral**, etc.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            </div>
     </div>
 
     <footer class="footer-bg text-white text-center py-4 mt-auto">
         <div class="h-3 bg-repeat-x bg-gray-600 mb-2" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCc+CjxyZWN0IHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCcgZmlsbD0nI2Q1ZDVkNScvPgo8cmVjdCB4PScx十三章IHk9JzEzJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM4YzhjOGMnIC8+CjxyZWN0IHg9JzI1JyB5PScyNScgd2lkdGg9JzEyJyBoZWlnaHQ9JzEyJyBmaWxsPScjOGM4YzhjJyAvPgo8cmVjdCB4PScx十三章IHk9JzI1JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyNiYmJiYmInIC8+CjxyZWN0IHg9JzI1JyB5PScx十三章IHdpZHRoPScxMiMgaGVpZ2h0PScxMiIgZmlsbD0nI2JiYmJmJyAvPgo8cmVjdCB4PScxJyB5PScxJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPHJlY3QgeD0nNDMnIHk9JzM3JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPC9zdmc+'); background-size: 50px 50px;"></div>
         
-        <p class="text-sm font-light mb-1">Av. Paseo de la República S/N Palacio de Justicia, Cercado, Lima - Perú</p>
+        <p class="text-sm font-light mb-1">UNIVERSIDAD NACIONAL DEL ALTIPLANO PUNO - PUNO - PERU</p>
         <p class="text-xs font-semibold mb-1">Copyright ® - 2016 Todos los derechos reservados</p>
-        <p class="text-xs font-light">Recomendado para Chrome, Mozilla Firefox, iExplorer 9 o versiones superiores</p>
+        <p class="text-xs font-light">Recomendado para Chrome, Mozilla Firefox, Anroid,Iphone </p>
     </footer>
 
 
@@ -296,7 +398,7 @@
         const ETAPAS_END_INDEX = 40;   // Columna AO (inclusive)
 
 
-        // --- Utilidades ---
+        // --- Utilidades y Lógica de Interfaz ---
         
         /**
          * Actualiza la fecha y hora en tiempo real en el encabezado.
@@ -338,7 +440,6 @@
 
         /**
          * Verifica si una cadena parece ser una URL válida (inicia con http o tiene estructura de link).
-         * CRÍTICO PARA EL BOTÓN DE DESCARGA y para las ETAPAS.
          * @param {string} text 
          * @returns {boolean}
          */
@@ -434,11 +535,35 @@
             });
         }
         
+        // MODIFICADO: Función para mostrar la sección correcta (INICIO, VIDEOTUTORIALES, PREGUNTAS FRECUENTES)
+        function showSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-section').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Mostrar la sección seleccionada
+            document.getElementById(`section${sectionId.charAt(0).toUpperCase() + sectionId.slice(1)}`).classList.remove('hidden');
+
+            // Lógica de visibilidad del comunicado
+            const isSearchSection = sectionId === 'search';
+            const isShowingResults = !document.getElementById("resultContainer").classList.contains("hidden");
+
+            if (isSearchSection && !isShowingResults) {
+                document.getElementById("comunicadoBox").classList.remove("hidden");
+            } else {
+                document.getElementById("comunicadoBox").classList.add("hidden");
+            }
+        }
+
+
         // Inicializar al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
             generarCaptcha();
             updateEspecialidad();
             updateTime(); // Llamada inicial para mostrar la hora
+            // Inicia en la sección de Búsqueda (INICIO)
+            showSection('search'); 
         });
 
         // MODIFICADO: Ahora también controla la visibilidad del comunicado
@@ -456,8 +581,10 @@
             document.getElementById("reporteDetallado").innerHTML = "";
             generarCaptcha(); // Regenera el captcha
 
-            // Muestra el comunicado
-            document.getElementById("comunicadoBox").classList.remove("hidden"); 
+            // Muestra el comunicado (solo si estamos en la sección de Búsqueda/INICIO)
+            if (!document.getElementById("sectionSearch").classList.contains("hidden")) {
+                document.getElementById("comunicadoBox").classList.remove("hidden"); 
+            }
 
             // Limpia los campos de búsqueda
             document.getElementById("distrito").value = "--SELECCIONAR";
@@ -636,7 +763,7 @@
         } // Cierre de la función buscarExpediente()
 
 
-        // --- CONTINUACIÓN DEL BLOQUE DE CÓDIGO INICIAL (PARTE 2) ---
+        // --- Lógica de Generación de HTML ---
 
         /**
          * Genera el HTML del reporte detallado (sección principal, partes procesales y etapas del proceso).
