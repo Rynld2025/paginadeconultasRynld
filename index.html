@@ -161,7 +161,7 @@
     </header>
     
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
-        <div class="w-full max-w-4xl mx-auto comunicado-box p-4 text-center rounded-lg shadow-md mb-8">
+        <div id="comunicadoBox" class="w-full max-w-4xl mx-auto comunicado-box p-4 text-center rounded-lg shadow-md mb-8">
             <h3 class="text-base font-extrabold text-judicial-red mb-2">COMUNICADO</h3>
             <p class="text-sm text-gray-700 leading-relaxed">
                 A partir de la fecha, se ha incluido un nuevo campo como medida técnica de protección, para que solo las partes puedan acceder a sus expedientes; a requerimiento de la Autoridad Nacional de Protección de Datos Personales y la Dirección de Fiscalización e Instrucción del Ministerio de Justicia y Derechos Humanos - MINJUSDH.
@@ -441,19 +441,25 @@
             updateTime(); // Llamada inicial para mostrar la hora
         });
 
+        // MODIFICADO: Ahora también controla la visibilidad del comunicado
         function mostrarResults() {
              document.getElementById("searchContainer").classList.add("hidden");
             document.getElementById("resultContainer").classList.remove("hidden");
+            // Oculta el comunicado
+            document.getElementById("comunicadoBox").classList.add("hidden"); 
         }
         
-        // Vuelve al formulario de búsqueda Y LIMPIA LOS CAMPOS
+        // MODIFICADO: Ahora también controla la visibilidad del comunicado y limpia los campos
         function mostrarBusqueda() {
             document.getElementById("resultContainer").classList.add("hidden");
             document.getElementById("searchContainer").classList.remove("hidden");
             document.getElementById("reporteDetallado").innerHTML = "";
             generarCaptcha(); // Regenera el captcha
 
-            // --- NUEVO: Limpia los campos de búsqueda ---
+            // Muestra el comunicado
+            document.getElementById("comunicadoBox").classList.remove("hidden"); 
+
+            // Limpia los campos de búsqueda
             document.getElementById("distrito").value = "--SELECCIONAR";
             document.getElementById("instancia").value = "--SELECCIONAR";
             updateEspecialidad(); // Actualiza especialidad después de cambiar instancia
@@ -606,7 +612,7 @@
                     // PASO CRÍTICO: Obtenemos el encabezado para el PDF
                     const urlPdfHeader = COLUMN_INDICES.URL_PDF_HEADER_KEY; 
                     
-                    mostrarResults(); // Ahora mostramos resultados ANTES de generar el HTML del reporte
+                    mostrarResults(); // Muestra resultados y OCULTA comunicado
                     mostrarResultadosDetallados(headers, foundMatch, expedienteHeader, urlPdfHeader); 
                     showMessage(`Expediente encontrado y detallado.`, 'success');
                 } else {
@@ -617,7 +623,7 @@
 
                     document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600">${finalErrorDisplay}</div>`;
                     showMessage("Búsqueda fallida: " + errorReason.replace(/\*\*/g, '').replace(/\<br\>/g, ' '), 'error');
-                    mostrarResults(); // Asegurarse de que el contenedor de resultados se muestra para el mensaje de error
+                    mostrarResults(); // Muestra resultados y OCULTA comunicado para ver el mensaje de error
                     console.error("DIAGNÓSTICO DE FALLO:", errorReason);
                 }
 
@@ -657,8 +663,6 @@
             
             // 4. Insertar todos los reportes
             reporteDetalladoDiv.innerHTML = mainReportHtml + partesReportHtml + etapasReportHtml;
-
-            // mostrarResults(); // Esta llamada se ha movido a buscarExpediente() para que se muestre antes si hay error
         }
 
         /**
