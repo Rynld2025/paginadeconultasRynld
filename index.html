@@ -39,6 +39,20 @@
             color: #555;
             font-weight: normal;
         }
+        .download-button {
+            background-color: #8b0000;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        .download-button:hover {
+            background-color: #a00000;
+        }
     </style>
     <script>
         // Configuración de Tailwind para usar la fuente Inter y colores personalizados
@@ -171,37 +185,71 @@
         // La URL de Google Sheets se mantiene como la que proporcionaste
         const sheetURL = "https://docs.google.com/spreadsheets/d/1YykbF710wRkZze-A3Kf8OWt15GOR0DPznHP1Dp8VXEc/gviz/tq?tqx=out:json";
 
+        // --- Mapeo de Columna Fija (Índices basados en 0, es decir: A=0, B=1, C=2, D=3, E=4) ---
+        const COLUMN_INDICES = {
+            DISTRITO: 0, // Columna A
+            INSTANCIA: 1, // Columna B
+            ESPECIALIDAD: 2, // Columna C
+            ANIO: 3, // Columna D
+            EXPEDIENTE: 4, // Columna E (¡El campo de validación principal!)
+            NRO_EXPEDIENTE_DISPLAY: 4,
+            // URL del PDF (Asumimos AO)
+            URL_PDF: 40 // Columna AO
+        };
+
+        // --- Rango de Columnas para ETAPAS DEL PROCESO ---
+        // U es el índice 20 (U=20)
+        // AN es el índice 39 (AN=39)
+        const ETAPAS_START_INDEX = 20; // Columna U
+        const ETAPAS_END_INDEX = 39;   // Columna AN (inclusive)
+
 
         // --- Utilidades ---
         
         /**
+         * Función para limpiar una cadena de texto, removiendo espacios, guiones y signos de puntuación, 
+         * para hacer la comparación ultra-flexible. (Ej: 'LIMA-NORTE' -> 'LIMANORTE')
+         * @param {string} text 
+         * @returns {string} Texto limpio y en mayúsculas.
+         */
+        function ultraClean(text) {
+            if (!text) return "";
+            // Elimina cualquier caracter que no sea una letra o número, y convierte a mayúsculas
+            return text.toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); 
+        }
+
+        /**
+         * Verifica si una cadena parece ser una URL válida (inicia con http).
+         * @param {string} text 
+         * @returns {boolean}
+         */
+        function isUrl(text) {
+            if (!text) return false;
+            const str = text.toString().trim();
+            return str.toLowerCase().startsWith('http');
+        }
+
+        /**
          * Muestra un mensaje flotante (reemplazo de alert()).
-         * @param {string} message - El texto del mensaje.
-         * @param {('error'|'success')} [type='error'] - El tipo de mensaje (afecta el color).
          */
         function showMessage(message, type = 'error') {
             const box = document.getElementById('messageBox');
             box.textContent = message;
             
-            // Eliminar clases de estado previas
             box.classList.remove('bg-red-600', 'bg-green-600', 'opacity-100');
-            box.classList.add('opacity-0'); // Ocultar temporalmente para resetear
+            box.classList.add('opacity-0'); 
 
-            // Aplicar clases según el tipo
             if (type === 'error') {
                 box.classList.add('bg-red-600');
             } else if (type === 'success') {
                 box.classList.add('bg-green-600');
             }
 
-            // Mostrar el mensaje
             requestAnimationFrame(() => {
                 box.classList.add('opacity-100');
                 box.classList.remove('opacity-0');
             });
 
-
-            // Ocultar después de 4 segundos
             setTimeout(() => {
                 box.classList.remove('opacity-100');
                 box.classList.add('opacity-0');
@@ -238,8 +286,13 @@
             updateEspecialidad();
         });
 
+        function mostrarResults() {
+             document.getElementById("searchContainer").classList.add("hidden");
+            document.getElementById("resultContainer").classList.remove("hidden");
+        }
 
-        // --- Lógica de Búsqueda ---
+
+        // --- Lógica de Búsqueda (CON DIAGNÓSTICO DE ERROR Y COLUMNAS FIJAS) ---
 
         async function buscarExpediente() {
             // 1. Validar Captcha
@@ -268,8 +321,20 @@
             document.getElementById("loadingIndicator").classList.remove("hidden");
             document.getElementById("reporteDetallado").innerHTML = "";
 
+            // 3. Preparar criterios de búsqueda (se limpian los secundarios)
+            const searchCriteria = {
+                expediente: expediente.trim().toUpperCase(), 
+                anio: anio.trim().toUpperCase(), 
+                distrito: ultraClean(distrito),
+                instancia: ultraClean(instancia),
+                especialidad: ultraClean(especialidad)
+            };
+            
+            // Log para debug
+            console.log("CRITERIOS DE BÚSQUEDA NORMALIZADOS Y LIMPIADOS:", searchCriteria);
 
-            // 3. Conectar y Buscar en Google Sheets
+
+            // 4. Conectar y Buscar en Google Sheets
             try {
                 const response = await fetch(sheetURL);
                 
@@ -286,78 +351,127 @@
                 const rows = json.table.rows;
                 const headers = json.table.cols.map(c => c.label);
 
-                // --- BÚSQUEDA DINÁMICA DE COLUMNAS CLAVE ---
-                const normalizedHeaders = headers.map(h => h.toUpperCase().trim());
-                
-                // Buscamos la columna de Expediente
-                let expIdx = normalizedHeaders.findIndex(h => h.includes('EXPEDIENTE') || h.includes('EXP') || h.includes('N°'));
-                // Buscamos la columna de Año
-                let anioIdx = normalizedHeaders.findIndex(h => h.includes('AÑO') || h.includes('ANIO'));
+                // 5. Filtrar datos con diagnóstico de error (usando índices de columna fijos)
+                let foundMatch = null;
+                let errorReason = "No se encontró ninguna fila con ese N° Expediente.";
 
-                // Fallback: Si no se encuentran por nombre, asumimos los índices 0 y 1 (más común)
-                if (expIdx === -1) expIdx = 0;
-                if (anioIdx === -1) anioIdx = 1;
-                
-                console.log(`Columnas detectadas: Expediente (Índice ${expIdx}), Año (Índice ${anioIdx})`);
-                // ---------------------------------------------
-
-                // 4. Filtrar datos usando los índices detectados
-                const searchExpediente = expediente.toUpperCase();
-                const searchAnio = anio.toUpperCase();
-
-                // Mapear filas a objetos para facilitar la visualización por nombre de encabezado
-                const dataObjects = rows
-                    .map(r => r.c.map(c => (c ? c.v : "")))
-                    .map(r => {
-                        // Crear un objeto donde la clave es el encabezado y el valor es el dato de la celda
-                        const obj = {};
-                        headers.forEach((header, index) => {
-                            obj[header] = r[index] || "";
-                        });
-                        return obj;
-                    })
-                    .filter(obj => {
-                        // Usar los índices detectados para filtrar con mayor precisión
-                        const rowExpediente = (obj[headers[expIdx]] || "").toString().toUpperCase();
-                        const rowAnio = (obj[headers[anioIdx]] || "").toString().toUpperCase();
-                        
-                        // Filtro: Debe incluir el número de expediente Y el año
-                        return rowExpediente.includes(searchExpediente) && rowAnio.includes(searchAnio);
+                // Transformar las filas de Google Sheets a objetos usando los encabezados
+                const allDataObjects = rows.map(r => {
+                    const obj = {};
+                    r.c.forEach((cell, index) => {
+                        // Usar el valor (v) o la cadena formateada (f) si el valor es null
+                        obj[headers[index]] = (cell && cell.v !== undefined) ? cell.v : (cell && cell.f !== undefined) ? cell.f : "";
                     });
+                    return obj;
+                });
+                
+                // 5.1. PRIMER FILTRO: N° Expediente (Columna E, índice 4)
+                const expedientMatches = allDataObjects.filter(obj => {
+                    // Obtener el valor del N° Expediente usando la posición fija (índice 4)
+                    const rowExpediente = (obj[headers[COLUMN_INDICES.EXPEDIENTE]] || "").toString().trim().toUpperCase();
+                    // El valor del Expediente de la BD DEBE CONTENER el valor del formulario.
+                    return rowExpediente.includes(searchCriteria.expediente); 
+                });
+                
+                if (expedientMatches.length === 0) {
+                    errorReason = `No se encontró el Expediente N°: ${expediente} en la columna "E" (Expediente) de su base de datos.`;
+                } else {
+                    // 5.2. SEGUNDO FILTRO Y DIAGNÓSTICO: Validar los 4 criterios secundarios (A, B, C, D)
+                    for (const obj of expedientMatches) {
+                        // Función auxiliar para obtener el valor del Sheet por índice
+                        const getRowValueByIndex = (index) => (obj[headers[index]] || "").toString();
 
+                        // Preparar valores del Sheet para comparación
+                        const rowAnio = getRowValueByIndex(COLUMN_INDICES.ANIO).trim().toUpperCase();
+                        const rowDistritoClean = ultraClean(getRowValueByIndex(COLUMN_INDICES.DISTRITO));
+                        const rowInstanciaClean = ultraClean(getRowValueByIndex(COLUMN_INDICES.INSTANCIA));
+                        const rowEspecialidadClean = ultraClean(getRowValueByIndex(COLUMN_INDICES.ESPECIALIDAD));
+                        
+                        // Validaciones
+                        const matchAnio = rowAnio.includes(searchCriteria.anio);
+                        const matchDistrito = rowDistritoClean.includes(searchCriteria.distrito); 
+                        const matchInstancia = rowInstanciaClean.includes(searchCriteria.instancia);
+                        const matchEspecialidad = rowEspecialidadClean.includes(searchCriteria.especialidad); 
+
+                        if (matchAnio && matchDistrito && matchInstancia && matchEspecialidad) {
+                            // Coincidencia perfecta encontrada
+                            foundMatch = obj;
+                            break; 
+                        } else {
+                            // Si el Expediente coincidió, pero fallaron los secundarios, diagnosticamos cuál falló
+                            if (!matchAnio) {
+                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero el **Año (Columna D)** es incorrecto. Valor esperado: ${searchCriteria.anio}. Valor en BD: ${rowAnio}.`;
+                            } else if (!matchDistrito) {
+                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero el **Distrito Judicial (Columna A)** es incorrecto. Valor esperado (limpio): ${searchCriteria.distrito}. Valor en BD (limpio): ${rowDistritoClean}.`;
+                            } else if (!matchInstancia) {
+                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero la **Instancia (Columna B)** es incorrecta. Valor esperado (limpio): ${searchCriteria.instancia}. Valor en BD (limpio): ${rowInstanciaClean}.`;
+                            } else if (!matchEspecialidad) {
+                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero la **Especialidad (Columna C)** es incorrecta. Valor esperado (limpio): ${searchCriteria.especialidad}. Valor en BD (limpio): ${rowEspecialidadClean}.`;
+                            }
+                        }
+                    }
+                }
+                
                 document.getElementById("loadingIndicator").classList.add("hidden");
 
-                if (dataObjects.length > 0) {
-                    // Solo mostramos el primer resultado detallado, asumiendo una coincidencia única
-                    mostrarResultadosDetallados(headers, dataObjects[0]); 
+                if (foundMatch) {
+                    // Necesitamos pasar el nombre del encabezado del Expediente para que funcione el display
+                    const expedienteHeader = headers[COLUMN_INDICES.EXPEDIENTE];
+                    // También pasamos el encabezado de la URL del PDF
+                    const urlPdfHeader = headers[COLUMN_INDICES.URL_PDF] || 'URL_PDF_NO_ASIGNADA'; 
+                    mostrarResultadosDetallados(headers, foundMatch, expedienteHeader, urlPdfHeader); 
                     showMessage(`Expediente encontrado y detallado.`, 'success');
                 } else {
-                    document.getElementById("reporteDetallado").innerHTML = '<div class="text-center p-8 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-600"><p class="font-semibold">No se encontraron expedientes que coincidan.</p><p class="text-sm mt-1">Verifique el N° Expediente y el Año.</p></div>';
-                    showMessage("No se encontraron expedientes con los criterios proporcionados.", 'error');
+                    document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600"><p class="font-semibold text-red-700">Error de Coincidencia (Columna Fija):</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">Asegúrese de que el Expediente, Año y el Distrito/Instancia/Especialidad en su hoja de cálculo coincidan lo suficiente, ignorando espacios y guiones.</p></div>`;
+                    showMessage("Búsqueda fallida: " + errorReason.replace(/\*\*/g, '').replace(/\<br\>/g, ' '), 'error');
+                    mostrarResults(); 
+                    console.error("DIAGNÓSTICO DE FALLO (COLUMNAS FIJAS):", errorReason);
                 }
 
             } catch (e) {
                 document.getElementById("loadingIndicator").classList.add("hidden");
-                showMessage(`Error al conectar o procesar los datos de Drive. Detalle: ${e.message}`, 'error');
+                showMessage(`Error grave en la conexión/parsing de la Base de Datos. Detalle: ${e.message}`, 'error');
                 console.error("Error al obtener o parsear Google Sheets:", e);
                 mostrarBusqueda(); 
             }
         }
 
         /**
-         * Genera el HTML del reporte detallado (sección principal y partes procesales).
-         * @param {string[]} headers - Los encabezados de las columnas (claves del objeto data).
-         * @param {Object} data - El objeto de datos de la fila coincidente.
+         * Genera el HTML del reporte detallado (sección principal, partes procesales y etapas del proceso).
          */
-        function mostrarResultadosDetallados(headers, data) {
+        function mostrarResultadosDetallados(headers, data, nroExpedienteHeader, urlPdfHeader) {
             const reporteDetalladoDiv = document.getElementById("reporteDetallado");
             reporteDetalladoDiv.innerHTML = ""; 
 
-            // --- 1. Mapeo de datos para el reporte de EXPEDIENTE ---
-            // Las claves DEBEN coincidir EXACTAMENTE con los encabezados del Google Sheet
+            // Obtener el N° Expediente para el título
+            const displayExpediente = data[nroExpedienteHeader] || document.getElementById("expediente").value;
+
+            // Obtener la URL del PDF (se mantiene como la columna 40 / AO)
+            const pdfUrl = data[urlPdfHeader] && isUrl(data[urlPdfHeader]) ? data[urlPdfHeader] : null;
+
+            // --- 1. Generar Reporte de Expediente (Sección Superior) ---
+            const mainReportHtml = generarReporteExpediente(headers, data, nroExpedienteHeader, displayExpediente, pdfUrl);
+
+            // --- 2. Generar Partes Procesales (Sección Media) ---
+            const partesReportHtml = generarReportePartes(data);
+
+            // --- 3. Generar Etapas del Proceso (Sección Inferior) ---
+            const etapasReportHtml = generarReporteEtapas(headers, data);
+            
+            // 4. Insertar todos los reportes
+            reporteDetalladoDiv.innerHTML = mainReportHtml + partesReportHtml + etapasReportHtml;
+
+            mostrarResults(); // Muestra el contenedor de resultados
+        }
+
+        /**
+         * Auxiliar para generar el HTML de la sección de REPORTE DE EXPEDIENTE.
+         * Se añade 'pdfUrl' para generar el botón.
+         */
+        function generarReporteExpediente(headers, data, nroExpedienteHeader, displayExpediente, pdfUrl) {
+            
             const fieldMapExpediente = {
-                // Columna del Excel : Etiqueta a mostrar
-                'N° Expediente': 'N° EXPEDIENTE', 
+                [nroExpedienteHeader]: 'N° EXPEDIENTE', 
                 'ORGANO JURISDICCIONAL': 'ÓRGANO JURISDICCIONAL',
                 'JUEZ': 'JUEZ',
                 'FECHA DE INICIO': 'FECHA DE INICIO',
@@ -379,10 +493,14 @@
 
             fieldsToShow.forEach(sheetHeader => {
                 const label = fieldMapExpediente[sheetHeader];
-                const value = data[sheetHeader] || '---'; // Usar '---' si el valor es nulo o vacío
+                let value = data[sheetHeader] ? String(data[sheetHeader]).trim() : '---'; 
                 
-                // Si la columna existe en la data del Sheet, la mostramos
-                if (data.hasOwnProperty(sheetHeader) || sheetHeader === 'N° Expediente') { // N° Expediente se usa como campo clave
+                // Si el valor es una URL, lo ignoramos para que no se muestre como texto.
+                if (isUrl(value)) {
+                    value = '---'; // Reemplazamos el link con '---' para que no se muestre en los detalles
+                }
+
+                if (data.hasOwnProperty(sheetHeader) && value !== '---') { 
                     const itemHtml = `
                         <div class="report-grid-item">
                             <strong class="text-xs sm:text-sm text-gray-700 uppercase">${label}:</strong>
@@ -390,7 +508,6 @@
                         </div>
                     `;
 
-                    // Distribución en dos columnas
                     if (fieldIndex % 2 === 0) {
                         leftGridItems += itemHtml;
                     } else {
@@ -400,29 +517,51 @@
                 }
             });
 
+            // Generar el botón de descarga si existe la URL válida
+            let downloadButtonHtml = '';
+            if (pdfUrl) {
+                downloadButtonHtml = `
+                    <div class="mt-4 md:mt-0 md:col-span-2 flex justify-center md:justify-end">
+                        <a href="${pdfUrl}" target="_blank" class="download-button">
+                            DESCARGAR 
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 12.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    </div>
+                `;
+            } else {
+                downloadButtonHtml = `
+                    <div class="mt-4 md:mt-0 md:col-span-2 flex justify-center md:justify-end text-sm text-gray-500 italic">
+                        No hay enlace de PDF disponible para descargar.
+                    </div>
+                `;
+            }
 
-            // --- Generar Reporte de Expediente (Sección Superior) ---
-            const mainReportHtml = `
+
+            return `
                 <div class="report-section rounded-t-xl mt-0 bg-judicial-red">
-                    REPORTE DE EXPEDIENTE
-                    <span class="text-sm font-normal">${data['N° Expediente'] || 'N/A'}</span>
+                    1. REPORTE DE EXPEDIENTE
+                    <span class="text-sm font-normal">${displayExpediente}</span>
                 </div>
                 <div class="bg-white p-6 border-x border-b border-gray-200">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                         <div class="space-y-1">${leftGridItems}</div>
                         <div class="space-y-1">${rightGridItems}</div>
                     </div>
+                    ${downloadButtonHtml}
                 </div>
             `;
-            
-            // --- 2. Generar Partes Procesales (Sección Inferior) ---
+        }
 
-            // ** Columnas de Partes Procesales solicitadas **
-            const parteDemandante = data['PARTE DEMANDANTE'] || '---';
-            const parteDemandado = data['PARTE DEMANDADO'] || '---';
+        /**
+         * Auxiliar para generar el HTML de la sección de PARTES PROCESALES.
+         */
+        function generarReportePartes(data) {
+            const parteDemandante = data['PARTE DEMANDANTE'] || data['DEMANDANTE'] || '---';
+            const parteDemandado = data['PARTE DEMANDADO'] || data['DEMANDADO'] || '---';
             const tipoPersona = data['TIPO DE PERSONA'] || '---'; 
 
-            // Se asume que los nombres de las partes pueden estar separados por salto de línea (\n)
             const demandantes = parteDemandante.split('\n').filter(p => p.trim() !== '' && p.trim() !== '---');
             const demandados = parteDemandado.split('\n').filter(p => p.trim() !== '' && p.trim() !== '---');
 
@@ -458,18 +597,18 @@
             if (demandantes.length === 0 && demandados.length === 0) {
                 partesRowsHtml = `
                     <tr class="text-center">
-                        <td class="py-3 px-4 text-gray-500 italic" colspan="5">No hay información de Partes Procesales disponible para este expediente o la data es '---'.</td>
+                        <td class="py-3 px-4 text-gray-500 italic" colspan="5">No hay información de Partes Procesales disponible para este expediente.</td>
                     </tr>
                 `;
             }
 
 
-            const partesReportHtml = `
+            return `
                 <div class="report-section bg-gray-700">
-                    PARTES PROCESALES
+                    2. PARTES PROCESALES
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
                 </div>
-                <div class="bg-white p-6 border-x border-b border-gray-200 rounded-b-xl overflow-x-auto">
+                <div class="bg-white p-6 border-x border-b border-gray-200 overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead>
                             <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
@@ -482,18 +621,57 @@
                             ${partesRowsHtml}
                         </tbody>
                     </table>
-                    <p class="mt-4 text-xs text-gray-500">Nota: La información se extrae de las columnas 'PARTE DEMANDANTE', 'PARTE DEMANDADO' y 'TIPO DE PERSONA' de la hoja de cálculo.</p>
+                    <p class="mt-4 text-xs text-gray-500">Nota: La información se extrae de las columnas de Partes Procesales y Tipo de Persona de la hoja de cálculo.</p>
                 </div>
             `;
-
-
-            // 3. Insertar ambos reportes
-            reporteDetalladoDiv.innerHTML = mainReportHtml + partesReportHtml;
-
-
-            document.getElementById("searchContainer").classList.add("hidden");
-            document.getElementById("resultContainer").classList.remove("hidden");
         }
+
+        /**
+         * Auxiliar para generar el HTML de la sección de ETAPAS DEL PROCESO.
+         */
+        function generarReporteEtapas(headers, data) {
+            let etapasHtml = '';
+            let hasContent = false;
+            
+            // Recorrer el rango de columnas U (índice 20) hasta AN (índice 39)
+            for (let i = ETAPAS_START_INDEX; i <= ETAPAS_END_INDEX; i++) {
+                const header = headers[i];
+                // Usamos la propiedad .f (formateada) para obtener fechas, o el valor (v)
+                const value = data[header] ? String(data[header]).trim() : '';
+
+                if (value && value !== '---') {
+                    hasContent = true;
+                    // Estructura de timeline simple
+                    etapasHtml += `
+                        <div class="flex items-start py-3 border-b border-gray-100 last:border-b-0">
+                            <div class="w-2 h-2 mt-2 mr-3 rounded-full bg-judicial-red flex-shrink-0"></div>
+                            <div class="flex-grow">
+                                <strong class="block text-sm font-semibold text-gray-800">${header.toUpperCase()}:</strong>
+                                <span class="text-sm text-gray-600">${value}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            if (!hasContent) {
+                 etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de etapas procesales en el rango de columnas U a AN para este expediente.</p>`;
+            }
+
+            return `
+                <div class="report-section bg-gray-700">
+                    3. ETAPAS DEL PROCESO
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v5a1 1 0 001 1h3a1 1 0 100-2h-3V7z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="bg-white p-6 border-x border-b border-gray-200 rounded-b-xl">
+                    <div class="divide-y divide-gray-200">
+                        ${etapasHtml}
+                    </div>
+                    <p class="mt-4 text-xs text-gray-500">Nota: Esta sección muestra la información disponible desde la Columna U hasta la Columna AN (incluyendo los títulos de la Fila 1).</p>
+                </div>
+            `;
+        }
+
 
         // Vuelve al formulario de búsqueda
         function mostrarBusqueda() {
