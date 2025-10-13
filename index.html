@@ -1,658 +1,374 @@
-import { Component, signal, ChangeDetectionStrategy, computed } from '@angular/core';
-
-// Tipos de datos para las opciones de selección
-type Option = { label: string, value: string };
-
-// 1. NUEVO TIPO DE DATO PARA LOS RESULTADOS DE BÚSQUEDA
-type Resultado = {
-  nroExpediente: string;
-  instancia: string;
-  especialidad: string;
-  fechaIngreso: string;
-  estado: string;
-  demandante: string;
-  demandado: string;
-};
-
-// 2. DATOS SIMULADOS PARA LA TABLA DE RESULTADOS (Mock Data)
-const MOCK_RESULTS: Resultado[] = [
-  {
-    nroExpediente: '00123-2025-0-2101-JR-LA-01',
-    instancia: 'Juzgado Especializado de Trabajo',
-    especialidad: 'Laboral',
-    fechaIngreso: '15/03/2025',
-    estado: 'En Trámite (Sentencia Pendiente)',
-    demandante: 'JUAN PEREZ LOPEZ',
-    demandado: 'EMPRESA EJEMPLO S.A.C.',
-  },
-  {
-    nroExpediente: '00456-2024-0-2101-JR-LA-01',
-    instancia: 'Juzgado Especializado de Familia',
-    especialidad: 'Familia Civil',
-    fechaIngreso: '10/11/2024',
-    estado: 'Archivado',
-    demandante: 'MARIA GOMEZ RUIZ',
-    demandado: 'FABRICA MODERNA E.I.R.L.',
-  },
-];
-
-
-// Datos simulados para las listas desplegables
-const MOCK_OPTIONS = {
-  distritos: [
-    { label: '--SELECCIONAR--', value: '' },
-    { label: 'AMAZONAS', value: 'AMAZONAS' },
-    { label: 'ANCASH', value: 'ANCASH' },
-    { label: 'APURIMAC', value: 'APURIMAC' },
-    { label: 'AREQUIPA', value: 'AREQUIPA' },
-    { label: 'AYACUCHO', value: 'AYACUCHO' },
-    { label: 'CAJAMARCA', value: 'CAJAMARCA' },
-    { label: 'CALLAO', value: 'CALLAO' },
-    { label: 'CAÑETE', value: 'CANETE' },
-    { label: 'CUSCO', value: 'CUSCO' },
-    { label: 'DEL SANTA', value: 'DEL_SANTA' },
-    { label: 'HUANCAVELICA', value: 'HUANCAVELICA' },
-    { label: 'HUANUCO', value: 'HUANUCO' },
-    { label: 'HUAURA', value: 'HUAURA' },
-    { label: 'ICA', value: 'ICA' },
-    { label: 'JUNIN', value: 'JUNIN' },
-    { label: 'LA LIBERTAD', value: 'LA_LIBERTAD' },
-    { label: 'LAMBAYEQUE', value: 'LAMBAYEQUE' },
-    { label: 'LIMA', value: 'LIMA' },
-    { label: 'LIMA ESTE', value: 'LIMA_ESTE' },
-    { label: 'LIMA NORTE', value: 'LIMA_NORTE' },
-    { label: 'LIMA SUR', value: 'LIMA_SUR' },
-    { label: 'LORETO', value: 'LORETO' },
-    { label: 'MADRE DE DIOS', value: 'MADRE_DE_DIOS' },
-    { label: 'MOQUEGUA', value: 'MOQUEGUA' },
-    { label: 'PASCO', value: 'PASCO' },
-    { label: 'PIURA', value: 'PIURA' },
-    { label: 'PUNO', value: 'PUNO' },
-    { label: 'SAN MARTIN', value: 'SAN_MARTIN' },
-    { label: 'SELVA CENTRAL', value: 'SELVA_CENTRAL' },
-    { label: 'SULLANA', value: 'SULLANA' },
-    { label: 'TACNA', value: 'TACNA' },
-    { label: 'TUMBES', value: 'TUMBES' },
-    { label: 'UCAYALI', value: 'UCAYALI' },
-    { label: 'VENTANILLA - LIMA NOROESTE', value: 'VENTANILLA_LIMA_NOROESTE' },
-  ],
-  instancias: [
-    { label: '--SELECCIONAR', value: '' },
-    { label: 'JUZGADO DE PAZ LETRADO', value: 'JPL' },
-    { label: 'JUZGADO ESPECIALIZADO', value: 'JE' },
-    { label: 'JUZGADO MIXTO', value: 'JM' },
-    { label: 'SALA SUPERIOR', value: 'SS' },
-  ],
-  especialidades: [
-    { label: '--SELECCIONAR', value: '' },
-    { label: 'CIVIL', value: 'CIVIL' },
-    { label: 'CONTENCIOSO ADMINISTRATIVO', value: 'CONTENCIOSO' },
-    { label: 'FAMILIA CIVIL', value: 'FAM_CIVIL' },
-    { label: 'FAMILIA TUTELAR', value: 'FAM_TUTELAR' },
-    { label: 'LABORAL', value: 'LABORAL' },
-  ],
-  // Usamos 'anios' en lugar de 'años' para evitar errores de compilación JIT
-  anios: Array.from({ length: 30 }, (_, i) => ({ 
-    label: String(2025 - i), 
-    value: String(2025 - i) 
-  })),
-};
-
-@Component({
-  selector: 'app-root',
-  standalone: true,
-  template: `
-    <!-- Carga de Tailwind CSS y configuración de fuente -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Expedientes Judiciales</title>
+    <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      .font-inter { font-family: 'Inter', sans-serif; }
-      /* Estilos para el efecto de sombra y el color del botón */
-      .btn-buscar {
-        background-color: #8B1B1C; /* Color rojo oscuro personalizado */
-        transition: background-color 0.15s ease-in-out, transform 0.1s ease-in-out;
-      }
-      .btn-buscar:hover {
-        background-color: #A32729;
-      }
-      .btn-buscar:active {
-        background-color: #721617;
-        transform: scale(0.99);
-      }
-      .captcha-bg {
-        background-color: #A32729; /* Fondo del captcha */
-      }
-      .tab-active {
-        background-color: #8B1B1C;
-        color: white;
-      }
-      .tab-inactive {
-        background-color: #F8F8F8;
-        color: #8B1B1C;
-        border-bottom: 2px solid #8B1B1C;
-      }
-      /* Estilo para el campo requerido con asterisco */
-      label:after {
-        content: " (*)";
-        color: #8B1B1C;
-        font-weight: bold;
-      }
-      /* Estilos de la tabla de resultados */
-      .table-header {
-        background-color: #f1f5f9; /* slate-100 */
-        color: #334155; /* slate-700 */
-        font-weight: 600;
-        text-align: left;
-      }
-      .table-row:nth-child(even) {
-        background-color: #f8fafc; /* sky-50 */
-      }
+        /* Configuración de color para el encabezado judicial */
+        .header-bg {
+            background-color: #8b0000; /* Dark Red */
+        }
+        /* Estilos de tabla simples para Tailwind */
+        .custom-table th, .custom-table td {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            text-align: left;
+        }
+        .custom-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            color: #1f2937;
+        }
     </style>
+    <script>
+        // Configuración de Tailwind para usar la fuente Inter y colores personalizados
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        'judicial-red': '#8b0000',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
 
-    <div class="min-h-screen bg-gray-200 p-4 sm:p-8 font-inter">
-      <div class="max-w-xl mx-auto bg-white shadow-2xl rounded-xl">
-        
-        <div class="text-center py-4 bg-gray-100 rounded-t-xl border-b border-gray-300">
-            <h2 class="text-2xl font-bold text-gray-800">BÚSQUEDA DE EXPEDIENTES</h2>
-        </div>
+    <!-- Caja de Mensajes Flotante (Reemplazo de alert()) -->
+    <div id="messageBox" class="fixed top-5 right-5 p-4 rounded-xl text-white transition-opacity duration-300 opacity-0 z-50 shadow-lg" role="alert" aria-live="polite"></div>
 
-        <!-- Pestañas de Navegación -->
-        <div class="flex">
-          <button 
-            class="w-1/2 py-3 px-4 font-semibold text-lg rounded-tl-xl transition duration-150"
-            [class.tab-active]="tabActiva() === 'filtros'"
-            [class.tab-inactive]="tabActiva() !== 'filtros'"
-            (click)="tabActiva.set('filtros')"
-          >
-            POR FILTROS
-          </button>
-          <button 
-            class="w-1/2 py-3 px-4 font-semibold text-lg rounded-tr-xl transition duration-150"
-            [class.tab-active]="tabActiva() === 'codigo'"
-            [class.tab-inactive]="tabActiva() !== 'codigo'"
-            (click)="tabActiva.set('codigo')"
-          >
-            POR CÓDIGO DE EXPEDIENTE
-          </button>
-        </div>
+    <header class="header-bg text-white text-center py-4 text-xl font-extrabold shadow-md">
+        Consulta de Expedientes Judiciales
+    </header>
 
-        <!-- Contenido de las Pestañas -->
-        <div class="p-6 sm:p-8">
-          <!-- El formulario se muestra si la pestaña activa es 'filtros' -->
-          @if (tabActiva() === 'filtros') {
-            <!-- Formulario de Búsqueda por Filtros -->
-            <form (submit)="buscarExpediente($event)" class="space-y-6">
+    <div class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="w-full max-w-4xl mx-auto">
+            
+            <!-- Contenedor de Búsqueda -->
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-100" id="searchContainer">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Parámetros de Búsqueda</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Distrito Judicial -->
+                    <div>
+                        <label for="distrito" class="block text-sm font-medium text-gray-700 mb-1">Distrito Judicial (*)</label>
+                        <select id="distrito" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
+                            <option>--SELECCIONAR</option>
+                            <option>AMAZONAS</option><option>ANCASH</option><option>APURIMAC</option>
+                            <option>AREQUIPA</option><option>AYACUCHO</option><option>CAJAMARCA</option>
+                            <option>CALLAO</option><option>CAÑETE</option><option>CUSCO</option>
+                            <option>DEL SANTA</option><option>HUANCAVELICA</option><option>HUANUCO</option>
+                            <option>HUAURA</option><option>ICA</option><option>JUNIN</option>
+                            <option>LA LIBERTAD</option><option>LAMBAYEQUE</option><option>LIMA</option>
+                            <option>LIMA ESTE</option><option>LIMA NORTE</option><option>LIMA SUR</option>
+                            <option>LORETO</option><option>MADRE DE DIOS</option><option>MOQUEGUA</option>
+                            <option>PASCO</option><option>PIURA</option><option>PUNO</option>
+                            <option>SAN MARTIN</option><option>SELVA CENTRAL</option><option>SULLANA</option>
+                            <option>TACNA</option><option>TUMBES</option><option>UCAYALI</option>
+                            <option>VENTANILLA - LIMA NOROESTE</option>
+                        </select>
+                    </div>
 
-              <!-- Distrito Judicial -->
-              <div class="form-group">
-                <label for="distrito" class="block text-gray-700 font-medium">Distrito Judicial</label>
-                <select 
-                  id="distrito"
-                  [value]="filtros.distrito()"
-                  (change)="updateFiltro('distrito', $event)"
-                  required
-                  class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
-                >
-                  @for (opt of mockOptions.distritos; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-              </div>
+                    <!-- Instancia -->
+                    <div>
+                        <label for="instancia" class="block text-sm font-medium text-gray-700 mb-1">Instancia (*)</label>
+                        <select id="instancia" onchange="updateEspecialidad()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
+                            <option>--SELECCIONAR</option>
+                            <option>JUZGADO DE PAZ LETRADO</option>
+                            <option>JUZGADO ESPECIALIZADO</option>
+                            <option>JUZGADO MIXTO</option>
+                            <option>SALA SUPERIOR</option>
+                        </select>
+                    </div>
 
-              <!-- Instancia -->
-              <div class="form-group">
-                <label for="instancia" class="block text-gray-700 font-medium">Instancia</label>
-                <select 
-                  id="instancia"
-                  [value]="filtros.instancia()"
-                  (change)="updateFiltro('instancia', $event)"
-                  required
-                  class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
-                >
-                  @for (opt of mockOptions.instancias; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-              </div>
+                    <!-- Especialidad -->
+                    <div>
+                        <label for="especialidad" class="block text-sm font-medium text-gray-700 mb-1">Especialidad (*)</label>
+                        <select id="especialidad" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
+                            <option>--SELECCIONAR</option>
+                        </select>
+                    </div>
 
-              <!-- Especialidad -->
-              <div class="form-group">
-                <label for="especialidad" class="block text-gray-700 font-medium">Especialidad</label>
-                <select 
-                  id="especialidad"
-                  [value]="filtros.especialidad()"
-                  (change)="updateFiltro('especialidad', $event)"
-                  required
-                  class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
-                >
-                  @for (opt of mockOptions.especialidades; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-              </div>
-
-              <!-- Año -->
-              <div class="form-group">
-                <label for="anio" class="block text-gray-700 font-medium">Año</label>
-                <select 
-                  id="anio"
-                  [value]="filtros.anio()"
-                  (change)="updateFiltro('anio', $event)"
-                  required
-                  class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
-                >
-                  @for (opt of mockOptions.anios; track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-              </div>
-
-              <!-- N° Expediente -->
-              <div class="form-group">
-                <label for="n_expediente" class="block text-gray-700 font-medium">N° Expediente</label>
-                <input 
-                  id="n_expediente"
-                  type="number"
-                  placeholder="Ej: 9876"
-                  [value]="filtros.n_expediente()"
-                  (input)="updateFiltro('n_expediente', $event)"
-                  required
-                  class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-
-              <!-- Parte -->
-              <div class="form-group">
-                <label for="parte" class="block text-gray-700 font-medium">Parte</label>
-                <input 
-                  id="parte"
-                  type="text"
-                  placeholder="Ej: lupaca"
-                  [value]="filtros.parte()"
-                  (input)="updateFiltro('parte', $event)"
-                  required
-                  class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                />
-                <p class="text-xs text-gray-500 mt-1">
-                  Ingresar ambos apellidos (paterno y materno) o la razón social de alguna de las partes involucradas en el proceso, respetando el orden y la forma exacta en que aparecen en cualquiera de las resoluciones del expediente.
-                </p>
-              </div>
-              
-              <p class="text-sm italic text-gray-500 pt-2">
-                (*) Datos obligatorios
-              </p>
-              
-              <!-- CAPTCHA -->
-              <div class="pt-4">
-                <h3 class="text-lg font-bold text-gray-800 mb-3">Escriba el código mostrado</h3>
-                <div class="flex items-center space-x-3">
-                  <!-- Imagen Captcha Simulado -->
-                  <div class="w-28 h-10 flex items-center justify-center rounded-lg shadow-md captcha-bg select-none">
-                    <span class="text-white text-xl font-extrabold tracking-wider transform rotate-[-5deg] opacity-90"
-                          [style.text-shadow]="'1px 1px 2px #000'">
-                      {{ captchaCode() }}
-                    </span>
-                  </div>
-                  
-                  <!-- Botones de Acción (Simulados) -->
-                  <button 
-                    type="button" 
-                    (click)="generarNuevoCaptcha()"
-                    class="p-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-200 transition duration-150 shadow-sm"
-                    title="Recargar Captcha"
-                  >
-                    <!-- Icono de recargar -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M20.9 13.9a9 9 0 0 0-14.7-5.1"/><path d="M3.1 10.1A9 9 0 0 0 17.9 15"/></svg>
-                  </button>
-                  <button 
-                    type="button" 
-                    class="p-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-200 transition duration-150 shadow-sm"
-                    title="Audio Captcha"
-                  >
-                    <!-- Icono de audio -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-                  </button>
-                  
-                  <input 
-                    type="text"
-                    placeholder="Código"
-                    [value]="captchaInput()"
-                    (input)="captchaInput.set(($event.target as HTMLInputElement).value)"
-                    required
-                    class="flex-grow p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 uppercase"
-                  />
-                </div>
-              </div>
-
-              <!-- Mensajes de Error de Búsqueda -->
-              @if (mensajeError()) {
-                <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg mt-4">
-                  <p class="font-bold">Error de Búsqueda:</p>
-                  <p class="text-sm">{{ mensajeError() }}</p>
-                </div>
-              }
-              
-              <!-- Botón de Búsqueda -->
-              <div class="text-center pt-4">
-                <button 
-                  type="submit" 
-                  [disabled]="!esFormularioValido()"
-                  class="btn-buscar text-white font-bold py-3 px-10 rounded-xl shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed text-xl w-full"
-                >
-                  BUSCAR
-                </button>
-              </div>
-            </form>
-          } @else {
-            <!-- Formulario de Búsqueda por Código de Expediente -->
-            <form (submit)="buscarExpedienteCodigo($event)" class="space-y-6">
-                <!-- Esto es solo un placeholder, mantendremos la funcionalidad básica -->
-                <p class="text-sm text-gray-600 font-semibold mb-4">
-                    Ingrese el código completo del expediente (Ej: 00001-2005-0-1817-JR-CO-06).
-                </p>
-
-                <!-- Código del Expediente (simplificado) -->
-                <div class="form-group">
-                    <label for="codigo_expediente" class="block text-gray-700 font-medium">Código del Expediente</label>
-                    <input 
-                      id="codigo_expediente"
-                      type="text"
-                      placeholder="Ej: 00001-2005-0-1817-JR-CO-06"
-                      [value]="codigoExpedienteInput()"
-                      (input)="codigoExpedienteInput.set(($event.target as HTMLInputElement).value)"
-                      required
-                      class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                    />
+                    <!-- Año -->
+                    <div>
+                        <label for="anio" class="block text-sm font-medium text-gray-700 mb-1">Año (*)</label>
+                        <input type="number" id="anio" placeholder="Ejemplo: 2025" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150" min="1900" max="2100">
+                    </div>
                 </div>
                 
-                <!-- Parte (se repite aquí, como en el diseño) -->
-                <div class="form-group">
-                    <label for="parte_codigo" class="block text-gray-700 font-medium">Parte (*)</label>
-                    <input 
-                      id="parte_codigo"
-                      type="text"
-                      placeholder="APELLIDO PATERNO Y APELLIDO MATERNO O RAZÓN SOCIAL"
-                      [value]="filtros.parte()"
-                      (input)="updateFiltro('parte', $event)"
-                      required
-                      class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                    />
+                <!-- N° Expediente -->
+                <div class="mt-4">
+                    <label for="expediente" class="block text-sm font-medium text-gray-700 mb-1">N° Expediente (*)</label>
+                    <input type="text" id="expediente" placeholder="Ejemplo: 12345" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
                 </div>
 
-                <p class="text-sm italic text-gray-500 pt-2">
-                    (*) Datos obligatorios
-                </p>
-
-                <!-- CAPTCHA -->
-                <div class="pt-4">
-                    <h3 class="text-lg font-bold text-gray-800 mb-3">Escriba el código mostrado</h3>
-                    <div class="flex items-center space-x-3">
-                        <div class="w-28 h-10 flex items-center justify-center rounded-lg shadow-md captcha-bg select-none">
-                            <span class="text-white text-xl font-extrabold tracking-wider transform rotate-[-5deg] opacity-90"
-                                  [style.text-shadow]="'1px 1px 2px #000'">
-                                {{ captchaCode() }}
-                            </span>
-                        </div>
-                        <button 
-                            type="button" 
-                            (click)="generarNuevoCaptcha()"
-                            class="p-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-200 transition duration-150 shadow-sm"
-                            title="Recargar Captcha"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M20.9 13.9a9 9 0 0 0-14.7-5.1"/><path d="M3.1 10.1A9 9 0 0 0 17.9 15"/></svg>
-                        </button>
-                        <button 
-                            type="button" 
-                            class="p-2.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-200 transition duration-150 shadow-sm"
-                            title="Audio Captcha"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-                        </button>
-                        <input 
-                            type="text"
-                            placeholder="Código"
-                            [value]="captchaInput()"
-                            (input)="captchaInput.set(($event.target as HTMLInputElement).value)"
-                            required
-                            class="flex-grow p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 uppercase"
-                        />
+                <!-- Captcha -->
+                <div class="mt-6 flex flex-col sm:flex-row items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div class="text-sm font-medium text-gray-700 shrink-0">Verificación de seguridad:</div>
+                    <div class="captcha flex items-center gap-4 flex-grow">
+                        <span class="captcha-code text-2xl font-extrabold tracking-widest bg-gray-300 text-gray-800 px-4 py-2 rounded-lg select-none shadow-inner" id="captchaCode"></span>
+                        <input type="text" id="captchaInput" placeholder="Ingrese el código" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 uppercase" maxlength="5">
                     </div>
                 </div>
 
-                <!-- Mensajes de Error de Búsqueda -->
-                @if (mensajeError()) {
-                    <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg mt-4">
-                        <p class="font-bold">Error de Búsqueda:</p>
-                        <p class="text-sm">{{ mensajeError() }}</p>
-                    </div>
+                <!-- Botón de Consulta -->
+                <button onclick="buscarExpediente()" class="w-full mt-6 bg-judicial-red hover:bg-red-700 text-white font-bold py-3 rounded-xl transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-judicial-red focus:ring-opacity-50">
+                    CONSULTAR EXPEDIENTE
+                </button>
+            </div>
+
+            <!-- Contenedor de Resultados -->
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl mt-8 border border-gray-100 result-container hidden" id="resultContainer">
+                <button onclick="mostrarBusqueda()" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-xl transition duration-150 mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                    </svg>
+                    Nueva Búsqueda
+                </button>
+                <h3 class="text-2xl font-semibold mb-4 text-gray-800">Resultado de Búsqueda</h3>
+                <div id="tablaResultados" class="overflow-x-auto">
+                    <!-- La tabla se inserta aquí -->
+                </div>
+                <div id="loadingIndicator" class="hidden text-center mt-6 text-lg font-medium text-judicial-red">Cargando resultados...</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Data y Mapeo ---
+        const especialidades = {
+            "--SELECCIONAR": ["--SELECCIONAR"],
+            "JUZGADO DE PAZ LETRADO": ["--SELECCIONAR", "CIVIL", "CONTENCIOSO ADMINISTRATIVO", "FAMILIA CIVIL", "FAMILIA TUTELAR", "LABORAL"],
+            "JUZGADO ESPECIALIZADO": ["--SELECCIONAR", "CIVIL", "FAMILIA CIVIL", "FAMILIA TUTELAR"],
+            "JUZGADO MIXTO": ["--SELECCIONAR", "CIVIL", "CONTENCIOSO ADMINISTRATIVO", "FAMILIA CIVIL", "FAMILIA TUTELAR", "LABORAL"],
+            "SALA SUPERIOR": ["--SELECCIONAR", "CIVIL", "CONTENCIOSO ADMINISTRATIVO", "FAMILIA CIVIL", "FAMILIA TUTELAR", "LABORAL"]
+        };
+        
+        // La URL de Google Sheets se mantiene como la que proporcionaste
+        const sheetURL = "https://docs.google.com/spreadsheets/d/1YykbF710wRkZze-A3Kf8OWt15GOR0DPznHP1Dp8VXEc/gviz/tq?tqx=out:json";
+
+
+        // --- Utilidades ---
+        
+        /**
+         * Muestra un mensaje flotante (reemplazo de alert()).
+         * @param {string} message - El texto del mensaje.
+         * @param {('error'|'success')} [type='error'] - El tipo de mensaje (afecta el color).
+         */
+        function showMessage(message, type = 'error') {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            
+            // Eliminar clases de estado previas
+            box.classList.remove('bg-red-600', 'bg-green-600', 'opacity-100');
+            box.classList.add('opacity-0'); // Ocultar temporalmente para resetear
+
+            // Aplicar clases según el tipo
+            if (type === 'error') {
+                box.classList.add('bg-red-600');
+            } else if (type === 'success') {
+                box.classList.add('bg-green-600');
+            }
+
+            // Mostrar el mensaje
+            requestAnimationFrame(() => {
+                box.classList.add('opacity-100');
+                box.classList.remove('opacity-0');
+            });
+
+
+            // Ocultar después de 4 segundos
+            setTimeout(() => {
+                box.classList.remove('opacity-100');
+                box.classList.add('opacity-0');
+            }, 4000);
+        }
+
+        // Generar captcha aleatorio
+        function generarCaptcha() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            let code = "";
+            for (let i = 0; i < 5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            document.getElementById("captchaCode").textContent = code;
+            document.getElementById("captchaInput").value = ""; // Limpiar input del captcha
+        }
+
+        // Actualiza el select de Especialidad basado en la Instancia seleccionada
+        function updateEspecialidad() {
+            const instancia = document.getElementById("instancia").value;
+            const especialidad = document.getElementById("especialidad");
+            especialidad.innerHTML = "";
+            
+            const opts = especialidades[instancia] || especialidades["--SELECCIONAR"];
+
+            opts.forEach(e => {
+                const opt = document.createElement("option");
+                opt.textContent = e;
+                especialidad.appendChild(opt);
+            });
+        }
+        
+        // Inicializar al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            generarCaptcha();
+            updateEspecialidad();
+        });
+
+
+        // --- Lógica de Búsqueda ---
+
+        async function buscarExpediente() {
+            // 1. Validar Captcha
+            const codigo = document.getElementById("captchaCode").textContent;
+            const entrada = document.getElementById("captchaInput").value.trim().toUpperCase();
+            if (entrada !== codigo) {
+                showMessage("Código de verificación incorrecto. Intente de nuevo.", 'error');
+                generarCaptcha();
+                return;
+            }
+
+            // 2. Validar campos obligatorios
+            const distrito = document.getElementById("distrito").value;
+            const instancia = document.getElementById("instancia").value;
+            const especialidad = document.getElementById("especialidad").value;
+            const anio = document.getElementById("anio").value.trim();
+            const expediente = document.getElementById("expediente").value.trim();
+
+            if (distrito === "--SELECCIONAR" || instancia === "--SELECCIONAR" || especialidad === "--SELECCIONAR" || !expediente || !anio) {
+                showMessage("Por favor, complete todos los campos obligatorios (*).", 'error');
+                generarCaptcha(); 
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            document.getElementById("loadingIndicator").classList.remove("hidden");
+            document.getElementById("tablaResultados").innerHTML = "";
+
+
+            // 3. Conectar y Buscar en Google Sheets
+            try {
+                const response = await fetch(sheetURL);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
                 }
 
-                <!-- Botón de Búsqueda -->
-                <div class="text-center pt-4">
-                    <button 
-                        type="submit" 
-                        [disabled]="!esFormularioCodigoValido()"
-                        class="btn-buscar text-white font-bold py-3 px-10 rounded-xl shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed text-xl w-full"
-                    >
-                        CONSULTAR
-                    </button>
-                </div>
-            </form>
-          }
+                const text = await response.text();
+                
+                // Parsing específico para el formato JSONP de GSheets
+                const jsonString = text.substring(47).slice(0, -2);
+                const json = JSON.parse(jsonString);
+                
+                const rows = json.table.rows;
+                const headers = json.table.cols.map(c => c.label);
 
-          <!-- 3. NUEVA SECCIÓN: RESULTADOS DE LA BÚSQUEDA -->
-          @if (busquedaRealizada()) {
-            <div class="pt-8 mt-6 border-t border-gray-300">
-              <h2 class="text-xl font-bold text-gray-800 mb-4">Resultados de la Búsqueda</h2>
-              
-              @if (resultados().length > 0) {
-                <div class="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
-                  <table class="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr>
-                        <th class="px-3 py-3 text-xs table-header w-1/4">N° Expediente</th>
-                        <th class="px-3 py-3 text-xs table-header">Instancia / Especialidad</th>
-                        <th class="px-3 py-3 text-xs table-header hidden sm:table-cell">Estado</th>
-                        <th class="px-3 py-3 text-xs table-header">Partes</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                      @for (res of resultados(); track res.nroExpediente) {
-                        <tr class="table-row hover:bg-gray-100">
-                          <td class="px-3 py-4 whitespace-nowrap text-sm font-medium text-blue-700 cursor-pointer hover:underline w-1/4">
-                            {{ res.nroExpediente }}
-                            <div class="text-xs text-gray-500 mt-1 sm:hidden">{{ res.fechaIngreso }}</div>
-                          </td>
-                          <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-600">
-                            <span class="font-semibold">{{ res.instancia }}</span>
-                            <br>
-                            <span class="text-xs text-gray-500">{{ res.especialidad }}</span>
-                          </td>
-                          <td class="px-3 py-4 whitespace-nowrap text-sm hidden sm:table-cell">
-                            <span [class]="res.estado.includes('Archivado') ? 'bg-gray-200 text-gray-800' : 'bg-green-100 text-green-800'"
-                                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
-                                {{ res.estado }}
-                            </span>
-                          </td>
-                          <td class="px-3 py-4 text-sm text-gray-800">
-                            <span class="font-medium text-xs block truncate" title="Demandante: {{ res.demandante }}">Dte: {{ res.demandante }}</span>
-                            <span class="font-medium text-xs text-red-600 block truncate" title="Demandado: {{ res.demandado }}">Ddo: {{ res.demandado }}</span>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              } @else {
-                <!-- Mensaje de no resultados -->
-                <div class="p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
-                  <p class="font-bold">Información:</p>
-                  <p class="text-sm">No se encontraron expedientes con los filtros ingresados. Intente con otros criterios.</p>
-                </div>
-              }
-            </div>
-          }
+                // --- BÚSQUEDA DINÁMICA DE COLUMNAS CLAVE ---
+                const normalizedHeaders = headers.map(h => h.toUpperCase().trim());
+                
+                // Buscamos columnas que contengan 'EXPEDIENTE', 'EXP', 'N°', 'N' etc.
+                let expIdx = normalizedHeaders.findIndex(h => h.includes('EXPEDIENTE') || h.includes('EXP'));
+                // Buscamos columnas que contengan 'AÑO' o 'ANIO'
+                let anioIdx = normalizedHeaders.findIndex(h => h.includes('AÑO') || h.includes('ANIO'));
 
-        </div>
-        
-        <!-- Pie de página simulado para completar el diseño -->
-        <div class="text-center text-xs text-gray-500 p-4 border-t border-gray-300 rounded-b-xl">
-            © 2016 Todos los derechos reservados
-            <br>
-            Recomendado para Chrome, Mozilla Firefox, ¡Explorer 9 o versiones superiores
-        </div>
-      </div>
-    </div>
-  `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
-export class App {
-  // Datos simulados accesibles en el template
-  mockOptions = MOCK_OPTIONS;
-  
-  // --- ESTADO DEL COMPONENTE ---
-  tabActiva = signal<'filtros' | 'codigo'>('filtros');
-  
-  // Estado del Formulario de Filtros
-  filtros = {
-    distrito: signal<string>('PUNO'),
-    instancia: signal<string>('JE'), // JUZGADO ESPECIALIZADO
-    especialidad: signal<string>('LABORAL'),
-    anio: signal<string>('2025'), 
-    n_expediente: signal<string>('9876'),
-    parte: signal<string>('lupaca'),
-  };
+                // Fallback: Si no se encuentran por nombre, asumimos los índices 0 y 1 (como en el código anterior)
+                if (expIdx === -1) expIdx = 0;
+                if (anioIdx === -1) anioIdx = 1;
+                
+                console.log(`Columnas detectadas: Expediente (Índice ${expIdx}), Año (Índice ${anioIdx})`);
+                // ---------------------------------------------
 
-  // Estado del Formulario de Código
-  codigoExpedienteInput = signal<string>('');
+                // 4. Filtrar datos usando los índices detectados
+                const searchExpediente = expediente.toUpperCase();
+                const searchAnio = anio.toUpperCase();
 
-  // Estado del Captcha
-  captchaCode = signal<string>(this.generateCaptcha());
-  captchaInput = signal<string>('');
-  
-  // Estado de Mensajes
-  mensajeError = signal<string | null>(null);
+                const resultados = rows
+                    .map(r => r.c.map(c => (c ? c.v : "")))
+                    .filter(r => {
+                        // Asegurar que la fila tiene suficientes columnas
+                        if (r.length <= Math.max(expIdx, anioIdx)) return false; 
+                        
+                        const rowExpediente = (r[expIdx] || "").toString().toUpperCase();
+                        const rowAnio = (r[anioIdx] || "").toString().toUpperCase();
 
-  // 4. NUEVAS SEÑALES PARA MANEJO DE RESULTADOS
-  resultados = signal<Resultado[]>([]);
-  busquedaRealizada = signal<boolean>(false); // Indica si ya se ha intentado buscar al menos una vez
+                        // La búsqueda se mantiene con .includes() (coincidencia parcial)
+                        return rowExpediente.includes(searchExpediente) && rowAnio.includes(searchAnio);
+                    });
 
-  // --- LÓGICA COMPUTADA ---
+                document.getElementById("loadingIndicator").classList.add("hidden");
 
-  /**
-   * Verifica si el formulario de filtros está completamente lleno y el captcha es correcto.
-   */
-  esFormularioValido = computed(() => {
-    const filtrosLlenos = 
-      this.filtros.distrito() && this.filtros.distrito() !== '' &&
-      this.filtros.instancia() && this.filtros.instancia() !== '' &&
-      this.filtros.especialidad() && this.filtros.especialidad() !== '' &&
-      this.filtros.anio() && this.filtros.anio() !== '' &&
-      this.filtros.n_expediente() && 
-      this.filtros.parte();
+                if (resultados.length > 0) {
+                    mostrarResultados(headers, resultados);
+                    showMessage(`Se encontraron ${resultados.length} expedientes.`, 'success');
+                } else {
+                    mostrarResultados(headers, []);
+                    showMessage("No se encontraron expedientes con los criterios proporcionados.", 'error');
+                }
 
-    const captchaCorrecto = this.captchaInput().toUpperCase() === this.captchaCode().toUpperCase();
-    
-    return !!filtrosLlenos && captchaCorrecto;
-  });
+            } catch (e) {
+                document.getElementById("loadingIndicator").classList.add("hidden");
+                showMessage(`Error al conectar o procesar los datos de Drive. Verifique que la hoja esté 'Publicada en la web'. Detalle: ${e.message}`, 'error');
+                console.error("Error al obtener o parsear Google Sheets:", e);
+                mostrarBusqueda(); 
+            }
+        }
 
-  /**
-   * Verifica si el formulario de código está completamente lleno y el captcha es correcto.
-   */
-  esFormularioCodigoValido = computed(() => {
-    const camposLlenos = 
-      this.codigoExpedienteInput() &&
-      this.filtros.parte();
+        // Muestra la tabla de resultados
+        function mostrarResultados(headers, data) {
+            const tablaResultadosDiv = document.getElementById("tablaResultados");
+            tablaResultadosDiv.innerHTML = ""; 
 
-    const captchaCorrecto = this.captchaInput().toUpperCase() === this.captchaCode().toUpperCase();
-    
-    return !!camposLlenos && captchaCorrecto;
-  });
+            if (data.length === 0) {
+                tablaResultadosDiv.innerHTML = '<div class="text-center p-8 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-600"><p class="font-semibold">No se encontraron expedientes que coincidan.</p><p class="text-sm mt-1">Verifique el N° Expediente, el Año y que su hoja de Drive esté publicada correctamente.</p></div>';
+            } else {
+                const tabla = document.createElement("table");
+                tabla.className = "custom-table w-full";
+                const thead = document.createElement("thead");
+                const trh = document.createElement("tr");
 
-  // --- MÉTODOS DE ACCIÓN ---
+                // Crear encabezados de columna
+                headers.forEach(h => {
+                    const th = document.createElement("th");
+                    th.textContent = h;
+                    trh.appendChild(th);
+                });
+                thead.appendChild(trh);
+                tabla.appendChild(thead);
 
-  /**
-   * Genera un código CAPTCHA alfanumérico aleatorio de 5 caracteres.
-   */
-  generateCaptcha(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 5; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  }
-  
-  /**
-   * Genera un nuevo código CAPTCHA y limpia la entrada del usuario.
-   */
-  generarNuevoCaptcha(): void {
-    this.captchaCode.set(this.generateCaptcha());
-    this.captchaInput.set('');
-    this.mensajeError.set(null);
-  }
+                // Crear filas de datos
+                const tbody = document.createElement("tbody");
+                data.forEach(row => {
+                    const tr = document.createElement("tr");
+                    tr.className = "hover:bg-gray-50 transition duration-150";
+                    row.forEach(val => {
+                        const td = document.createElement("td");
+                        td.textContent = val;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                tabla.appendChild(tbody);
+                tablaResultadosDiv.appendChild(tabla);
+            }
 
-  /**
-   * Actualiza el valor de una señal de filtro.
-   * @param key La clave del filtro a actualizar.
-   * @param event El evento de cambio o entrada.
-   */
-  updateFiltro(key: keyof App['filtros'], event: Event): void {
-    const value = (event.target as HTMLInputElement | HTMLSelectElement).value;
-    this.filtros[key].set(value);
-  }
+            document.getElementById("searchContainer").classList.add("hidden");
+            document.getElementById("resultContainer").classList.remove("hidden");
+        }
 
-  /**
-   * Simula la búsqueda del expediente por filtros.
-   * @param event Evento de submit del formulario.
-   */
-  buscarExpediente(event: Event): void {
-    event.preventDefault();
-    this.mensajeError.set(null);
-    this.busquedaRealizada.set(true); // Se inicia el intento de búsqueda
-
-    // 5. LÓGICA DE SIMULACIÓN DE RESULTADOS
-    if (this.captchaInput().toUpperCase() !== this.captchaCode().toUpperCase()) {
-      this.mensajeError.set('El código de seguridad ingresado es incorrecto.');
-      this.generarNuevoCaptcha();
-      this.resultados.set([]); // Limpiar resultados anteriores
-      return;
-    }
-
-    // Si el n° de expediente es 9876, simulamos encontrar resultados.
-    if (this.filtros.n_expediente() === '9876' && this.filtros.distrito() === 'PUNO') { 
-        this.resultados.set(MOCK_RESULTS);
-        this.generarNuevoCaptcha();
-    } else {
-        this.resultados.set([]); // No hay resultados
-        this.generarNuevoCaptcha();
-    }
-    // NOTA: El mensaje de éxito/error ya no se usa, ahora se muestra la tabla o el mensaje de 'No se encontraron'.
-  }
-
-  /**
-   * Simula la búsqueda del expediente por código.
-   * @param event Evento de submit del formulario.
-   */
-  buscarExpedienteCodigo(event: Event): void {
-    event.preventDefault();
-    this.mensajeError.set(null);
-    this.busquedaRealizada.set(true);
-
-    if (this.captchaInput().toUpperCase() !== this.captchaCode().toUpperCase()) {
-      this.mensajeError.set('El código de seguridad ingresado es incorrecto.');
-      this.generarNuevoCaptcha();
-      this.resultados.set([]);
-      return;
-    }
-
-    // 5. LÓGICA DE SIMULACIÓN DE RESULTADOS POR CÓDIGO
-    // Si el código contiene '00123', simulamos resultados.
-    if (this.codigoExpedienteInput().includes('00123')) {
-        this.resultados.set(MOCK_RESULTS.slice(0, 1)); // Muestra solo el primer resultado
-        this.generarNuevoCaptcha();
-    } else {
-        this.resultados.set([]); // No hay resultados
-        this.generarNuevoCaptcha();
-    }
-  }
-}
+        // Vuelve al formulario de búsqueda
+        function mostrarBusqueda() {
+            document.getElementById("resultContainer").classList.add("hidden");
+            document.getElementById("searchContainer").classList.remove("hidden");
+            document.getElementById("tablaResultados").innerHTML = "";
+            generarCaptcha();
+        }
+    </script>
+</body>
+</html>
