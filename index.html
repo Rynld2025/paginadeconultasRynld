@@ -9,7 +9,7 @@
     <style>
         /* Configuración de color para el encabezado judicial */
         .header-bg {
-            background-color: #006400; /* Dark Green (Verde Oscuro) */
+            background-color: #8b0000; /* Dark Red */
         }
         /* Estilos de reporte detallado */
         .report-section {
@@ -40,7 +40,7 @@
             font-weight: normal;
         }
         .download-button {
-            background-color: #006400; /* Dark Green */
+            background-color: #8b0000;
             color: white;
             padding: 10px 20px;
             border-radius: 0.5rem;
@@ -51,7 +51,7 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
         }
         .download-button:hover {
-            background-color: #004d00; /* Darker Green for hover */
+            background-color: #a00000;
         }
         
         /* Estilo de item de etapa uniforme */
@@ -91,8 +91,7 @@
                         sans: ['Inter', 'Arial', 'sans-serif'],
                     },
                     colors: {
-                        // Se mantiene el nombre 'judicial-red' por compatibilidad, pero se cambia el valor a verde oscuro
-                        'judicial-red': '#006400',
+                        'judicial-red': '#8b0000',
                     }
                 }
             }
@@ -179,7 +178,7 @@
                 </div>
 
                 <!-- Botón de Consulta -->
-                <button onclick="buscarExpediente()" class="w-full mt-6 bg-judicial-red hover:bg-green-800 text-white font-bold py-3 rounded-xl transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-judicial-red focus:ring-opacity-50">
+                <button onclick="buscarExpediente()" class="w-full mt-6 bg-judicial-red hover:bg-red-700 text-white font-bold py-3 rounded-xl transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-judicial-red focus:ring-opacity-50">
                     CONSULTAR EXPEDIENTE
                 </button>
             </div>
@@ -224,7 +223,7 @@
             NRO_EXPEDIENTE_DISPLAY: 4,
             
             // La URL del PDF se buscará por el encabezado "URL EXPEDIENTE"
-            URL_PDF_HEADER_KEY: 'URL EXPEDIENTE'  
+            URL_PDF_HEADER_KEY: 'URL EXPEDIENTE' 
         };
 
         // --- Rango de Columnas para ETAPAS DEL PROCESO ---
@@ -379,7 +378,7 @@
 
             if (distrito === "--SELECCIONAR" || instancia === "--SELECCIONAR" || especialidad === "--SELECCIONAR" || !expediente || !anio) {
                 showMessage("Por favor, complete todos los campos obligatorios (*).", 'error');
-                generarCaptcha();  
+                generarCaptcha(); 
                 return;
             }
             
@@ -389,8 +388,8 @@
 
             // 3. Preparar criterios de búsqueda (se limpian los secundarios)
             const searchCriteria = {
-                expediente: expediente.trim().toUpperCase(),  
-                anio: anio.trim().toUpperCase(),  
+                expediente: expediente.trim().toUpperCase(), 
+                anio: anio.trim().toUpperCase(), 
                 distrito: ultraClean(distrito),
                 instancia: ultraClean(instancia),
                 especialidad: ultraClean(especialidad)
@@ -409,10 +408,10 @@
                 for (let i = 0; i < maxRetries; i++) {
                     try {
                         response = await fetch(sheetURL);
-                        if (response.ok) break;  
+                        if (response.ok) break; 
                         throw new Error(`Error HTTP: ${response.status}`);
                     } catch (e) {
-                        if (i === maxRetries - 1) throw e;  
+                        if (i === maxRetries - 1) throw e; 
                         await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000)); // Espera exponencial
                     }
                 }
@@ -450,7 +449,7 @@
                     // Obtener el valor del N° Expediente usando la posición fija (encabezado)
                     const rowExpediente = (obj[headers[COLUMN_INDICES.EXPEDIENTE]] || "").toString().trim().toUpperCase();
                     // El valor del Expediente de la BD DEBE CONTENER el valor del formulario.
-                    return rowExpediente.includes(searchCriteria.expediente);  
+                    return rowExpediente.includes(searchCriteria.expediente); 
                 });
                 
                 if (expedientMatches.length === 0) {
@@ -469,14 +468,14 @@
                         
                         // Validaciones
                         const matchAnio = rowAnio.includes(searchCriteria.anio);
-                        const matchDistrito = rowDistritoClean.includes(searchCriteria.distrito);  
+                        const matchDistrito = rowDistritoClean.includes(searchCriteria.distrito); 
                         const matchInstancia = rowInstanciaClean.includes(searchCriteria.instancia);
-                        const matchEspecialidad = rowEspecialidadClean.includes(searchCriteria.especialidad);  
+                        const matchEspecialidad = rowEspecialidadClean.includes(searchCriteria.especialidad); 
 
                         if (matchAnio && matchDistrito && matchInstancia && matchEspecialidad) {
                             // Coincidencia perfecta encontrada
                             foundMatch = obj;
-                            break;  
+                            break; 
                         } else {
                             // Si el Expediente coincidió, pero fallaron los secundarios, diagnosticamos cuál falló
                             if (!matchAnio) {
@@ -499,19 +498,19 @@
                     const expedienteHeader = headers[COLUMN_INDICES.EXPEDIENTE];
                     
                     // PASO CRÍTICO: Obtenemos el encabezado para el PDF
-                    const urlPdfHeader = COLUMN_INDICES.URL_PDF_HEADER_KEY;  
+                    const urlPdfHeader = COLUMN_INDICES.URL_PDF_HEADER_KEY; 
                     
-                    mostrarResultadosDetallados(headers, foundMatch, expedienteHeader, urlPdfHeader);  
+                    mostrarResultadosDetallados(headers, foundMatch, expedienteHeader, urlPdfHeader); 
                     showMessage(`Expediente encontrado y detallado.`, 'success');
                 } else {
                     // Se usa el errorReason simplificado aquí
-                    const finalErrorDisplay = errorReason.startsWith("No se encontró")  
+                    const finalErrorDisplay = errorReason.startsWith("No se encontró") 
                         ? `<p class="font-semibold text-red-700">Error de Coincidencia:</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">Asegúrese de que el Expediente, Año y el Distrito/Instancia/Especialidad en su hoja de cálculo coincidan lo suficiente, ignorando espacios y guiones.</p>`
                         : `<p class="font-semibold text-red-700">Error de Coincidencia:</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">El N° Expediente fue encontrado, pero los filtros secundarios no coincidieron.</p>`;
 
                     document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600">${finalErrorDisplay}</div>`;
                     showMessage("Búsqueda fallida: " + errorReason.replace(/\*\*/g, '').replace(/\<br\>/g, ' '), 'error');
-                    mostrarResults();  
+                    mostrarResults(); 
                     console.error("DIAGNÓSTICO DE FALLO:", errorReason);
                 }
 
@@ -519,7 +518,7 @@
                 document.getElementById("loadingIndicator").classList.add("hidden");
                 showMessage(`Error grave en la conexión/parsing de la Base de Datos. Detalle: ${e.message}`, 'error');
                 console.error("Error al obtener o parsear Google Sheets:", e);
-                mostrarBusqueda();  
+                mostrarBusqueda(); 
             }
         }
 
@@ -528,7 +527,7 @@
          */
         function mostrarResultadosDetallados(headers, data, nroExpedienteHeader, urlPdfHeader) {
             const reporteDetalladoDiv = document.getElementById("reporteDetallado");
-            reporteDetalladoDiv.innerHTML = "";  
+            reporteDetalladoDiv.innerHTML = ""; 
 
             // Obtener el N° Expediente para el título
             const displayExpediente = data[nroExpedienteHeader] || document.getElementById("expediente").value;
@@ -560,7 +559,7 @@
             
             // Mapeo de columnas a mostrar en el detalle
             const fieldMapExpediente = {
-                [nroExpedienteHeader]: 'N° EXPEDIENTE',  
+                [nroExpedienteHeader]: 'N° EXPEDIENTE', 
                 'ORGANO JURISDICCIONAL': 'ÓRGANO JURISDICCIONAL',
                 'JUEZ': 'JUEZ',
                 'FECHA DE INICIO': 'FECHA DE INICIO',
@@ -574,7 +573,7 @@
                 'FECHA CONCLUSION': 'FECHA CONCLUSIÓN',
                 'MOTIVO CONCLUSION': 'MOTIVO CONCLUSIÓN',
                 // Excluimos la columna de URL PDF del detalle
-                [COLUMN_INDICES.URL_PDF_HEADER_KEY]: null,  
+                [COLUMN_INDICES.URL_PDF_HEADER_KEY]: null, 
             };
 
             let leftGridItems = '';
@@ -584,17 +583,17 @@
 
             fieldsToShow.forEach(sheetHeader => {
                 // Si el mapeo es nulo, se omite (usado para la URL PDF)
-                if (fieldMapExpediente[sheetHeader] === null) return;  
+                if (fieldMapExpediente[sheetHeader] === null) return; 
                 
                 const label = fieldMapExpediente[sheetHeader];
-                let value = data[sheetHeader] ? String(data[sheetHeader]).trim() : '---';  
+                let value = data[sheetHeader] ? String(data[sheetHeader]).trim() : '---'; 
                 
                 // Si el valor es una URL, la reemplazamos con '---' para que no se muestre como texto en este detalle
                 if (isUrl(value)) {
-                    value = '---';  
+                    value = '---'; 
                 }
 
-                if (data.hasOwnProperty(sheetHeader) && value !== '---') {  
+                if (data.hasOwnProperty(sheetHeader) && value !== '---') { 
                     const itemHtml = `
                         <div class="report-grid-item">
                             <strong class="text-xs sm:text-sm text-gray-700 uppercase">${label}:</strong>
@@ -615,171 +614,195 @@
             let downloadButtonHtml = '';
             if (pdfUrl) {
                 downloadButtonHtml = `
-                    <a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" class="download-button ml-4 hover:shadow-xl transition-all duration-200" title="Ver Expediente Completo en PDF">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.707-9.293a1 1 0 000 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V3a1 1 0 10-2 0v7.586L6.707 7.707a1 1 0 00-1.414 0z" clip-rule="evenodd" />
-                        </svg>
-                        Descargar/Ver Expediente
-                    </a>
+                    <div class="mt-6 md:mt-8 md:col-span-2 flex justify-center md:justify-end">
+                        <a href="${pdfUrl}" target="_blank" class="download-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            DESCARGAR EXPEDIENTE (PDF)
+                        </a>
+                    </div>
                 `;
-            }
+            } 
+            // Si pdfUrl es null, no se genera el div de descarga.
 
             return `
-                <div class="mb-8">
-                    <div class="report-section">
-                        <span>REPORTE DE EXPEDIENTE N° ${displayExpediente}</span>
-                        ${downloadButtonHtml}
+                <div class="report-section rounded-t-xl mt-0 bg-judicial-red">
+                    1. REPORTE DE EXPEDIENTE
+                    <span class="text-sm font-normal">${displayExpediente}</span>
+                </div>
+                <div class="bg-white p-6 border-x border-b border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                        <div class="space-y-1">${leftGridItems}</div>
+                        <div class="space-y-1">${rightGridItems}</div>
                     </div>
-                    <div class="bg-gray-50 border border-t-0 border-gray-200 p-6 rounded-b-xl shadow-inner">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-4">
-                            <div>${leftGridItems}</div>
-                            <div>${rightGridItems}</div>
-                        </div>
-                    </div>
+                    ${downloadButtonHtml}
                 </div>
             `;
         }
 
         /**
          * Auxiliar para generar el HTML de la sección de PARTES PROCESALES.
-         * Se extraen los datos de las columnas F, G, H, I, J, K, L.
          */
         function generarReportePartes(data) {
-            
-            // Los encabezados relevantes de las partes (Columnas F a L, pero no las mostraremos todas)
-            const partesHeaders = [
-                'DEMANDANTE/AGRAVIADO', // F
-                'ABOGADO DEMANDANTE',    // G
-                'DEMANDADO/IMPUTADO',    // H
-                'ABOGADO DEMANDADO',     // I
-                'TERCERO INTERVINIENTE', // J
-                'ABOGADO TERCERO',       // K
-                'OTROS',                 // L
-            ];
+            const parteDemandante = data['PARTE DEMANDANTE'] || data['DEMANDANTE'] || '---';
+            const parteDemandado = data['PARTE DEMANDADO'] || data['DEMANDADO'] || '---';
+            const tipoPersona = data['TIPO DE PERSONA'] || '---'; 
 
-            let partesHtml = '';
-            partesHeaders.forEach(header => {
-                const value = data[header] ? String(data[header]).trim() : '---';
-                if (value !== '---') {
-                    partesHtml += `
-                        <div class="report-grid-item">
-                            <strong class="text-xs sm:text-sm text-gray-700 uppercase">${header.replace('/', '/ ')}:</strong>
-                            <span class="text-sm font-semibold text-gray-900 break-words">${value}</span>
-                        </div>
+            const demandantes = parteDemandante.split('\n').filter(p => p.trim() !== '' && p.trim() !== '---');
+            const demandados = parteDemandado.split('\n').filter(p => p.trim() !== '' && p.trim() !== '---');
+
+            let partesRowsHtml = '';
+
+            // Llenar tabla con Demandantes
+            if (demandantes.length > 0) {
+                demandantes.forEach(name => {
+                    partesRowsHtml += `
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="py-3 px-4 text-judicial-red font-bold">DEMANDANTE</td>
+                            <td class="py-3 px-4">${tipoPersona}</td>
+                            <td class="py-3 px-4 font-medium" colspan="3">${name.trim()}</td>
+                        </tr>
                     `;
-                }
-            });
-
-            if (!partesHtml) {
-                partesHtml = `<div class="p-4 text-center text-gray-500 italic">No hay información de partes procesales disponible.</div>`;
+                });
             }
 
+            // Llenar tabla con Demandados
+            if (demandados.length > 0) {
+                demandados.forEach(name => {
+                    partesRowsHtml += `
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="py-3 px-4 text-blue-800 font-bold">DEMANDADO</td>
+                            <td class="py-3 px-4">${tipoPersona}</td>
+                            <td class="py-3 px-4 font-medium" colspan="3">${name.trim()}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Si no hay información de partes, mostrar una fila de "No hay partes"
+            if (demandantes.length === 0 && demandados.length === 0) {
+                partesRowsHtml = `
+                    <tr class="text-center">
+                        <td class="py-3 px-4 text-gray-500 italic" colspan="5">No hay información de Partes Procesales disponible para este expediente.</td>
+                    </tr>
+                `;
+            }
+
+
             return `
-                <div class="mb-8">
-                    <div class="report-section">
-                        PARTES PROCESALES
-                    </div>
-                    <div class="bg-gray-50 border border-t-0 border-gray-200 p-6 rounded-b-xl shadow-inner">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-4">
-                            <div>${partesHtml}</div>
-                            <div></div> <!-- Mantiene el layout en dos columnas -->
-                        </div>
-                    </div>
+                <div class="report-section bg-gray-700">
+                    2. PARTES PROCESALES
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
+                </div>
+                <div class="bg-white p-6 border-x border-b border-gray-200 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
+                                <th class="py-3 px-4 font-bold text-left">ROL</th>
+                                <th class="py-3 px-4 font-bold text-left">TIPO DE PERSONA</th>
+                                <th class="py-3 px-4 font-bold text-left" colspan="3">NOMBRE / RAZÓN SOCIAL</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 whitespace-nowrap text-sm text-gray-700">
+                            ${partesRowsHtml}
+                        </tbody>
+                    </table>
                 </div>
             `;
         }
-
 
         /**
          * Auxiliar para generar el HTML de la sección de ETAPAS DEL PROCESO.
-         * Itera desde el índice 20 (Columna U) hasta 40 (Columna AO)
          */
         function generarReporteEtapas(headers, data) {
-            let etapasListHtml = '';
-            let foundSteps = false;
-
-            // Iterar sobre las columnas desde U (20) hasta AO (40)
+            let etapas = [];
+            
+            // 1. Recorrer el rango de columnas U (índice 20) hasta AO (índice 40)
             for (let i = ETAPAS_START_INDEX; i <= ETAPAS_END_INDEX; i++) {
-                const stepHeader = headers[i];
-                let stepValue = data[stepHeader] ? String(data[stepHeader]).trim() : '';
-
-                // Si el valor contiene una URL, lo separamos para mostrarlo como botón
-                let displayValue = stepValue;
-                let linkUrl = null;
-
-                // Intentamos separar el valor en texto y URL (suponiendo que la URL está al final)
-                if (isUrl(stepValue)) {
-                    // Si es solo URL, la usamos y dejamos el texto vacío
-                    linkUrl = stepValue;
-                    displayValue = stepHeader; // Usamos el encabezado como texto principal
-                } else {
-                    // Intenta encontrar una URL dentro del texto y separarla
-                    const urlMatch = stepValue.match(/(https?:\/\/\S+)/);
-                    if (urlMatch) {
-                        linkUrl = urlMatch[0];
-                        displayValue = stepValue.replace(linkUrl, '').trim(); // Quita la URL del texto
-                    }
-                }
-
-                // El paso es válido si tiene algún contenido (texto o URL)
-                if (displayValue || linkUrl) {
-                    foundSteps = true;
-
-                    // Formatear la fecha si el encabezado lo sugiere (por ejemplo, si el encabezado termina en 'FECHA')
-                    // Aunque en este caso los encabezados son etapas, asumiremos que si hay un texto, se muestra.
+                const header = headers[i];
+                const rawValue = data[header] ? String(data[header]).trim() : '';
+                
+                if (rawValue && rawValue !== '---') {
+                    // Limpiar el encabezado (quitar números/guiones/caracteres extraños para display)
+                    const cleanedHeader = header.replace(/^\d+\.\s*/, '').replace(/[-_]/g, ' ').trim();
                     
-                    let linkButton = '';
-                    if (linkUrl) {
-                        linkButton = `
-                            <div class="mt-2">
-                                <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="step-link-button" title="Ver Documento Asociado">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                                        <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                                    </svg>
-                                    Ver Documento
-                                </a>
-                            </div>
+                    let content;
+                    
+                    // Comprobación CRÍTICA: Si el valor es una URL, generamos un botón simplificado
+                    if (isUrl(rawValue)) {
+                        // El texto del botón es fijo: "VER DOCUMENTO"
+                        const buttonText = "VER DOCUMENTO";
+                        
+                        // Generamos el botón con un ícono de enlace
+                        content = `
+                            <a href="${rawValue}" target="_blank" class="step-link-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 10-2.828-2.828l-5.741 5.741a2 2 0 00-1.287 1.287l-1.01 4.706a1 1 0 001.26 1.26l4.706-1.01a2 2 0 001.287-1.287l5.741-5.741zM17 17a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                                </svg>
+                                ${buttonText}
+                            </a>
                         `;
+                    } else {
+                        // Si no es URL, formateamos el valor (asumiendo que es una fecha o texto)
+                        const formattedValue = formatDate(rawValue);
+                        content = `<span class="text-sm text-gray-600">${formattedValue}</span>`;
                     }
-
-                    etapasListHtml += `
-                        <li class="step-item relative pl-6">
-                            <span class="absolute left-0 top-3 h-3 w-3 bg-[#4f46e5] rounded-full ring-4 ring-white shadow-md"></span>
-                            <div class="text-sm font-semibold text-gray-800">${stepHeader}</div>
-                            <p class="text-sm text-gray-600 mt-0.5">${displayValue || '---'}</p>
-                            ${linkButton}
-                        </li>
-                    `;
+                    
+                    etapas.push({
+                        header: cleanedHeader,
+                        contentHtml: content
+                    });
                 }
             }
 
-            if (!foundSteps) {
-                etapasListHtml = `<div class="p-4 text-center text-gray-500 italic">No se registraron etapas del proceso para este expediente.</div>`;
-            } else {
-                etapasListHtml = `<ol class="space-y-4">${etapasListHtml}</ol>`;
-            }
+            let etapasHtml = '';
+            const totalEtapas = etapas.length;
 
+            if (totalEtapas > 0) {
+                // 2. Iterar sobre las etapas encontradas para generar el HTML
+                etapas.forEach((etapa, index) => {
+                    const stepClass = 'step-item';
+                    const headerColor = 'text-gray-800';
+                    const iconColor = 'bg-gray-400';
+
+                    etapasHtml += `
+                        <div class="flex items-start ${stepClass}">
+                            <!-- Icono de progreso (color gris uniforme) -->
+                            <div class="w-3 h-3 mt-1.5 mr-3 rounded-full ${iconColor} flex-shrink-0"></div>
+                            <div class="flex-grow">
+                                <strong class="block text-sm font-semibold uppercase ${headerColor}">${etapa.header}:</strong>
+                                <!-- Inserta el contenido que puede ser una fecha/texto o un botón -->
+                                ${etapa.contentHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                 etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de etapas procesales en el rango de columnas U a AO para este expediente.</p>`;
+            }
 
             return `
-                <div class="mb-8">
-                    <div class="report-section">
-                        ETAPAS DEL PROCESO
-                    </div>
-                    <div class="bg-white border border-t-0 border-gray-200 p-6 rounded-b-xl shadow-inner">
-                        ${etapasListHtml}
+                <div class="report-section bg-gray-700">
+                    3. ETAPAS DEL PROCESO
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v5a1 1 0 001 1h3a1 1 0 100-2h-3V7z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="bg-white p-6 border-x border-b border-gray-200 rounded-b-xl">
+                    <div class="space-y-1">
+                        ${etapasHtml}
                     </div>
                 </div>
             `;
         }
 
+
+        // Vuelve al formulario de búsqueda
         function mostrarBusqueda() {
-             document.getElementById("resultContainer").classList.add("hidden");
-             document.getElementById("searchContainer").classList.remove("hidden");
-             document.getElementById("reporteDetallado").innerHTML = ""; // Limpiar resultados
-             generarCaptcha(); // Generar nuevo captcha al volver
+            document.getElementById("resultContainer").classList.add("hidden");
+            document.getElementById("searchContainer").classList.remove("hidden");
+            document.getElementById("reporteDetallado").innerHTML = "";
+            generarCaptcha();
         }
-        
     </script>
 </body>
 </html>
