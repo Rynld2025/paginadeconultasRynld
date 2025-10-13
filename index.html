@@ -53,6 +53,34 @@
         .download-button:hover {
             background-color: #a00000;
         }
+        
+        /* Estilo de item de etapa uniforme */
+        .step-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb; /* Separador gris claro */
+        }
+        .step-item:last-child {
+            border-bottom: none; /* No hay borde después del último item */
+        }
+        
+        /* Estilo para los botones de la etapa */
+        .step-link-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600; /* semi-bold */
+            color: white;
+            background-color: #4f46e5; /* Indigo */
+            border-radius: 9999px; /* full rounded */
+            transition: background-color 0.3s, transform 0.1s;
+            margin-top: 4px; /* Espacio entre el texto y el botón */
+        }
+        .step-link-button:hover {
+            background-color: #4338ca; /* Indigo 700 */
+            transform: translateY(-1px);
+        }
+
     </style>
     <script>
         // Configuración de Tailwind para usar la fuente Inter y colores personalizados
@@ -182,7 +210,7 @@
             "SALA SUPERIOR": ["--SELECCIONAR", "CIVIL", "CONTENCIOSO ADMINISTRATIVO", "FAMILIA CIVIL", "FAMILIA TUTELAR", "LABORAL"]
         };
         
-        // La URL de Google Sheets se mantiene como la que proporcionaste
+        // La URL de Google Sheets se mantiene
         const sheetURL = "https://docs.google.com/spreadsheets/d/1YykbF710wRkZze-A3Kf8OWt15GOR0DPznHP1Dp8VXEc/gviz/tq?tqx=out:json";
 
         // --- Mapeo de Columna Fija (Índices basados en 0, es decir: A=0, B=1, C=2, D=3, E=4) ---
@@ -193,15 +221,16 @@
             ANIO: 3, // Columna D
             EXPEDIENTE: 4, // Columna E (¡El campo de validación principal!)
             NRO_EXPEDIENTE_DISPLAY: 4,
-            // URL del PDF (Asumimos AO)
-            URL_PDF: 40 // Columna AO
+            
+            // La URL del PDF se buscará por el encabezado "URL EXPEDIENTE"
+            URL_PDF_HEADER_KEY: 'URL EXPEDIENTE' 
         };
 
         // --- Rango de Columnas para ETAPAS DEL PROCESO ---
         // U es el índice 20 (U=20)
-        // AN es el índice 39 (AN=39)
+        // AO es el índice 40 (AO=40)
         const ETAPAS_START_INDEX = 20; // Columna U
-        const ETAPAS_END_INDEX = 39;   // Columna AN (inclusive)
+        const ETAPAS_END_INDEX = 40;   // Columna AO (inclusive)
 
 
         // --- Utilidades ---
@@ -219,14 +248,50 @@
         }
 
         /**
-         * Verifica si una cadena parece ser una URL válida (inicia con http).
+         * Verifica si una cadena parece ser una URL válida (inicia con http o tiene estructura de link).
+         * CRÍTICO PARA EL BOTÓN DE DESCARGA y para las ETAPAS.
          * @param {string} text 
          * @returns {boolean}
          */
         function isUrl(text) {
             if (!text) return false;
-            const str = text.toString().trim();
-            return str.toLowerCase().startsWith('http');
+            const str = text.toString().trim().toLowerCase();
+            // Criterios flexibles: debe ser largo y contener indicadores comunes de URL
+            return str.length > 20 && (str.startsWith('http') || str.includes('.com') || str.includes('drive.google') || str.includes('doc.google') || str.includes('sheet.google'));
+        }
+        
+        /**
+         * Intenta formatear una cadena de texto a formato DD/MM/AAAA si parece una fecha.
+         * @param {string} dateString 
+         * @returns {string} Fecha formateada o cadena original.
+         */
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            // Intenta detectar el formato de fecha ISO (YYYY-MM-DD o YYYY/MM/DD) o fecha de hoja de cálculo (MM/DD/YYYY)
+            const parts = dateString.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/) || dateString.match(/(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+            
+            if (parts && parts.length === 4) {
+                let year, month, day;
+                if (parts[1].length === 4) { // Formato YYYY-MM-DD
+                    year = parts[1];
+                    month = parts[2];
+                    day = parts[3];
+                } else { // Formato MM-DD-YYYY o similar (común en Sheets)
+                    year = parts[3];
+                    month = parts[1];
+                    day = parts[2];
+                }
+                
+                // Asegura que mes y día tengan dos dígitos
+                const paddedMonth = month.padStart(2, '0');
+                const paddedDay = day.padStart(2, '0');
+                
+                return `${paddedDay}/${paddedMonth}/${year}`;
+            }
+            
+            // Si no coincide con un patrón de fecha, devuelve el original
+            return dateString;
         }
 
         /**
@@ -336,10 +401,23 @@
 
             // 4. Conectar y Buscar en Google Sheets
             try {
-                const response = await fetch(sheetURL);
+                // Implementar lógica de reintento con backoff exponencial
+                const maxRetries = 3;
+                let response = null;
+
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        response = await fetch(sheetURL);
+                        if (response.ok) break; 
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    } catch (e) {
+                        if (i === maxRetries - 1) throw e; 
+                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000)); // Espera exponencial
+                    }
+                }
                 
                 if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
+                    throw new Error(`Fallo después de ${maxRetries} intentos. Código HTTP: ${response.status}`);
                 }
 
                 const text = await response.text();
@@ -367,14 +445,14 @@
                 
                 // 5.1. PRIMER FILTRO: N° Expediente (Columna E, índice 4)
                 const expedientMatches = allDataObjects.filter(obj => {
-                    // Obtener el valor del N° Expediente usando la posición fija (índice 4)
+                    // Obtener el valor del N° Expediente usando la posición fija (encabezado)
                     const rowExpediente = (obj[headers[COLUMN_INDICES.EXPEDIENTE]] || "").toString().trim().toUpperCase();
                     // El valor del Expediente de la BD DEBE CONTENER el valor del formulario.
                     return rowExpediente.includes(searchCriteria.expediente); 
                 });
                 
                 if (expedientMatches.length === 0) {
-                    errorReason = `No se encontró el Expediente N°: ${expediente} en la columna "E" (Expediente) de su base de datos.`;
+                    errorReason = `No se encontró el Expediente N°: ${expediente} en la columna "${headers[COLUMN_INDICES.EXPEDIENTE]}" de su base de datos.`;
                 } else {
                     // 5.2. SEGUNDO FILTRO Y DIAGNÓSTICO: Validar los 4 criterios secundarios (A, B, C, D)
                     for (const obj of expedientMatches) {
@@ -400,13 +478,13 @@
                         } else {
                             // Si el Expediente coincidió, pero fallaron los secundarios, diagnosticamos cuál falló
                             if (!matchAnio) {
-                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero el **Año (Columna D)** es incorrecto. Valor esperado: ${searchCriteria.anio}. Valor en BD: ${rowAnio}.`;
+                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero el **Año (${headers[COLUMN_INDICES.ANIO]})** es incorrecto. Valor esperado: ${searchCriteria.anio}. Valor en BD: ${rowAnio}.`;
                             } else if (!matchDistrito) {
-                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero el **Distrito Judicial (Columna A)** es incorrecto. Valor esperado (limpio): ${searchCriteria.distrito}. Valor en BD (limpio): ${rowDistritoClean}.`;
+                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero el **Distrito Judicial (${headers[COLUMN_INDICES.DISTRITO]})** es incorrecto. Valor esperado (limpio): ${searchCriteria.distrito}. Valor en BD (limpio): ${rowDistritoClean}.`;
                             } else if (!matchInstancia) {
-                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero la **Instancia (Columna B)** es incorrecta. Valor esperado (limpio): ${searchCriteria.instancia}. Valor en BD (limpio): ${rowInstanciaClean}.`;
+                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero la **Instancia (${COLUMN_INDICES.INSTANCIA})** es incorrecta. Valor esperado (limpio): ${searchCriteria.instancia}. Valor en BD (limpio): ${rowInstanciaClean}.`;
                             } else if (!matchEspecialidad) {
-                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero la **Especialidad (Columna C)** es incorrecta. Valor esperado (limpio): ${searchCriteria.especialidad}. Valor en BD (limpio): ${rowEspecialidadClean}.`;
+                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero la **Especialidad (${COLUMN_INDICES.ESPECIALIDAD})** es incorrecta. Valor esperado (limpio): ${searchCriteria.especialidad}. Valor en BD (limpio): ${rowEspecialidadClean}.`;
                             }
                         }
                     }
@@ -417,15 +495,17 @@
                 if (foundMatch) {
                     // Necesitamos pasar el nombre del encabezado del Expediente para que funcione el display
                     const expedienteHeader = headers[COLUMN_INDICES.EXPEDIENTE];
-                    // También pasamos el encabezado de la URL del PDF
-                    const urlPdfHeader = headers[COLUMN_INDICES.URL_PDF] || 'URL_PDF_NO_ASIGNADA'; 
+                    
+                    // PASO CRÍTICO: Obtenemos el encabezado para el PDF
+                    const urlPdfHeader = COLUMN_INDICES.URL_PDF_HEADER_KEY; 
+                    
                     mostrarResultadosDetallados(headers, foundMatch, expedienteHeader, urlPdfHeader); 
                     showMessage(`Expediente encontrado y detallado.`, 'success');
                 } else {
-                    document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600"><p class="font-semibold text-red-700">Error de Coincidencia (Columna Fija):</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">Asegúrese de que el Expediente, Año y el Distrito/Instancia/Especialidad en su hoja de cálculo coincidan lo suficiente, ignorando espacios y guiones.</p></div>`;
+                    document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600"><p class="font-semibold text-red-700">Error de Coincidencia:</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">Asegúrese de que el Expediente, Año y el Distrito/Instancia/Especialidad en su hoja de cálculo coincidan lo suficiente, ignorando espacios y guiones.</p></div>`;
                     showMessage("Búsqueda fallida: " + errorReason.replace(/\*\*/g, '').replace(/\<br\>/g, ' '), 'error');
                     mostrarResults(); 
-                    console.error("DIAGNÓSTICO DE FALLO (COLUMNAS FIJAS):", errorReason);
+                    console.error("DIAGNÓSTICO DE FALLO:", errorReason);
                 }
 
             } catch (e) {
@@ -446,8 +526,9 @@
             // Obtener el N° Expediente para el título
             const displayExpediente = data[nroExpedienteHeader] || document.getElementById("expediente").value;
 
-            // Obtener la URL del PDF (se mantiene como la columna 40 / AO)
-            const pdfUrl = data[urlPdfHeader] && isUrl(data[urlPdfHeader]) ? data[urlPdfHeader] : null;
+            // Obtener la URL del PDF y verificar que sea una URL válida, buscándola por el HEADER KEY
+            const rawPdfUrl = data[urlPdfHeader] || null;
+            const pdfUrl = rawPdfUrl && isUrl(rawPdfUrl) ? rawPdfUrl : null;
 
             // --- 1. Generar Reporte de Expediente (Sección Superior) ---
             const mainReportHtml = generarReporteExpediente(headers, data, nroExpedienteHeader, displayExpediente, pdfUrl);
@@ -470,6 +551,7 @@
          */
         function generarReporteExpediente(headers, data, nroExpedienteHeader, displayExpediente, pdfUrl) {
             
+            // Mapeo de columnas a mostrar en el detalle
             const fieldMapExpediente = {
                 [nroExpedienteHeader]: 'N° EXPEDIENTE', 
                 'ORGANO JURISDICCIONAL': 'ÓRGANO JURISDICCIONAL',
@@ -484,6 +566,8 @@
                 'ESTADO': 'ESTADO',
                 'FECHA CONCLUSION': 'FECHA CONCLUSIÓN',
                 'MOTIVO CONCLUSION': 'MOTIVO CONCLUSIÓN',
+                // Excluimos la columna de URL PDF del detalle
+                [COLUMN_INDICES.URL_PDF_HEADER_KEY]: null, 
             };
 
             let leftGridItems = '';
@@ -492,12 +576,15 @@
             const fieldsToShow = Object.keys(fieldMapExpediente);
 
             fieldsToShow.forEach(sheetHeader => {
+                // Si el mapeo es nulo, se omite (usado para la URL PDF)
+                if (fieldMapExpediente[sheetHeader] === null) return; 
+                
                 const label = fieldMapExpediente[sheetHeader];
                 let value = data[sheetHeader] ? String(data[sheetHeader]).trim() : '---'; 
                 
-                // Si el valor es una URL, lo ignoramos para que no se muestre como texto.
+                // Si el valor es una URL, la reemplazamos con '---' para que no se muestre como texto en este detalle
                 if (isUrl(value)) {
-                    value = '---'; // Reemplazamos el link con '---' para que no se muestre en los detalles
+                    value = '---'; 
                 }
 
                 if (data.hasOwnProperty(sheetHeader) && value !== '---') { 
@@ -517,27 +604,21 @@
                 }
             });
 
-            // Generar el botón de descarga si existe la URL válida
+            // Generar el botón de descarga solo si existe la URL válida. 
             let downloadButtonHtml = '';
             if (pdfUrl) {
                 downloadButtonHtml = `
-                    <div class="mt-4 md:mt-0 md:col-span-2 flex justify-center md:justify-end">
+                    <div class="mt-6 md:mt-8 md:col-span-2 flex justify-center md:justify-end">
                         <a href="${pdfUrl}" target="_blank" class="download-button">
-                            DESCARGAR 
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 12.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
+                            DESCARGAR EXPEDIENTE (PDF)
                         </a>
                     </div>
                 `;
-            } else {
-                downloadButtonHtml = `
-                    <div class="mt-4 md:mt-0 md:col-span-2 flex justify-center md:justify-end text-sm text-gray-500 italic">
-                        No hay enlace de PDF disponible para descargar.
-                    </div>
-                `;
-            }
-
+            } 
+            // Si pdfUrl es null, no se genera el div de descarga.
 
             return `
                 <div class="report-section rounded-t-xl mt-0 bg-judicial-red">
@@ -628,34 +709,73 @@
 
         /**
          * Auxiliar para generar el HTML de la sección de ETAPAS DEL PROCESO.
+         * MODIFICADO: El texto del botón ahora es fijo: "VER DOCUMENTO".
          */
         function generarReporteEtapas(headers, data) {
-            let etapasHtml = '';
-            let hasContent = false;
+            let etapas = [];
             
-            // Recorrer el rango de columnas U (índice 20) hasta AN (índice 39)
+            // 1. Recorrer el rango de columnas U (índice 20) hasta AO (índice 40)
             for (let i = ETAPAS_START_INDEX; i <= ETAPAS_END_INDEX; i++) {
                 const header = headers[i];
-                // Usamos la propiedad .f (formateada) para obtener fechas, o el valor (v)
-                const value = data[header] ? String(data[header]).trim() : '';
-
-                if (value && value !== '---') {
-                    hasContent = true;
-                    // Estructura de timeline simple
-                    etapasHtml += `
-                        <div class="flex items-start py-3 border-b border-gray-100 last:border-b-0">
-                            <div class="w-2 h-2 mt-2 mr-3 rounded-full bg-judicial-red flex-shrink-0"></div>
-                            <div class="flex-grow">
-                                <strong class="block text-sm font-semibold text-gray-800">${header.toUpperCase()}:</strong>
-                                <span class="text-sm text-gray-600">${value}</span>
-                            </div>
-                        </div>
-                    `;
+                const rawValue = data[header] ? String(data[header]).trim() : '';
+                
+                if (rawValue && rawValue !== '---') {
+                    // Limpiar el encabezado (quitar números/guiones/caracteres extraños para display)
+                    const cleanedHeader = header.replace(/^\d+\.\s*/, '').replace(/[-_]/g, ' ').trim();
+                    
+                    let content;
+                    
+                    // Comprobación CRÍTICA: Si el valor es una URL, generamos un botón simplificado
+                    if (isUrl(rawValue)) {
+                        // El texto del botón ahora es fijo: "VER DOCUMENTO"
+                        const buttonText = "VER DOCUMENTO";
+                        
+                        // Generamos el botón con un ícono de enlace
+                        content = `
+                            <a href="${rawValue}" target="_blank" class="step-link-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 10-2.828-2.828l-5.741 5.741a2 2 0 00-1.287 1.287l-1.01 4.706a1 1 0 001.26 1.26l4.706-1.01a2 2 0 001.287-1.287l5.741-5.741zM17 17a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                                </svg>
+                                ${buttonText}
+                            </a>
+                        `;
+                    } else {
+                        // Si no es URL, formateamos el valor (asumiendo que es una fecha o texto)
+                        const formattedValue = formatDate(rawValue);
+                        content = `<span class="text-sm text-gray-600">${formattedValue}</span>`;
+                    }
+                    
+                    etapas.push({
+                        header: cleanedHeader,
+                        contentHtml: content
+                    });
                 }
             }
 
-            if (!hasContent) {
-                 etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de etapas procesales en el rango de columnas U a AN para este expediente.</p>`;
+            let etapasHtml = '';
+            const totalEtapas = etapas.length;
+
+            if (totalEtapas > 0) {
+                // 2. Iterar sobre las etapas encontradas para generar el HTML
+                etapas.forEach((etapa, index) => {
+                    const stepClass = 'step-item';
+                    const headerColor = 'text-gray-800';
+                    const iconColor = 'bg-gray-400';
+
+                    etapasHtml += `
+                        <div class="flex items-start ${stepClass}">
+                            <!-- Icono de progreso (color gris uniforme) -->
+                            <div class="w-3 h-3 mt-1.5 mr-3 rounded-full ${iconColor} flex-shrink-0"></div>
+                            <div class="flex-grow">
+                                <strong class="block text-sm font-semibold uppercase ${headerColor}">${etapa.header}:</strong>
+                                <!-- Inserta el contenido que puede ser una fecha/texto o un botón -->
+                                ${etapa.contentHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                 etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de etapas procesales en el rango de columnas U a AO para este expediente.</p>`;
             }
 
             return `
@@ -664,10 +784,10 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v5a1 1 0 001 1h3a1 1 0 100-2h-3V7z" clip-rule="evenodd" /></svg>
                 </div>
                 <div class="bg-white p-6 border-x border-b border-gray-200 rounded-b-xl">
-                    <div class="divide-y divide-gray-200">
+                    <div class="space-y-1">
                         ${etapasHtml}
                     </div>
-                    <p class="mt-4 text-xs text-gray-500">Nota: Esta sección muestra la información disponible desde la Columna U hasta la Columna AN (incluyendo los títulos de la Fila 1).</p>
+                    <p class="mt-4 text-xs text-gray-500">Nota: Esta sección muestra la información disponible desde la **Columna U hasta la Columna AO** (incluyendo los títulos de la Fila 1).</p>
                 </div>
             `;
         }
