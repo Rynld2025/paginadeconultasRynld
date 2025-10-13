@@ -4,16 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de Expedientes Judiciales</title>
-    <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Configuración de color para el encabezado judicial */
-        .header-bg {
-            background-color: #036635; /* Dark Red */
+        /* Configuración de color para el encabezado judicial (VERDE OSCURO) */
+        .header-bg, .nav-bg, .footer-bg {
+            background-color: #036635; /* Dark Green */
         }
-        /* Estilos de reporte detallado */
+        /* Estilos para el banner superior gris/rojo */
+        .top-banner {
+            background-color: #edeaea; /* Gris muy claro, similar a la imagen */
+            border-bottom: 2px solid #8b0000; /* Borde rojo */
+        }
+        /* Estilos para el comunicado */
+        .comunicado-box {
+            border: 2px solid #8b0000; /* Borde rojo oscuro */
+            background-color: #fefefe; /* Fondo blanco */
+        }
+        
+        /* Estilos de reporte detallado - TODOS los títulos de sección usan este color verde */
         .report-section {
-            background-color: #036635; /* Dark header for sections */
+            background-color: #036635; 
             color: white;
             padding: 10px 20px;
             font-weight: bold;
@@ -51,7 +61,7 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
         }
         .download-button:hover {
-            background-color: #036635;
+            background-color: #024a27; /* Un verde un poco más oscuro para el hover */
         }
         
         /* Estilo de item de etapa uniforme */
@@ -63,7 +73,7 @@
             border-bottom: none; /* No hay borde después del último item */
         }
         
-        /* Estilo para los botones de la etapa */
+        /* Estilo para los botones de la etapa (VERDES) */
         .step-link-button {
             display: inline-flex;
             align-items: center;
@@ -71,14 +81,37 @@
             font-size: 0.875rem; /* text-sm */
             font-weight: 600; /* semi-bold */
             color: white;
-            background-color: #4f46e5; /* Indigo */
+            background-color: #036635; /* Verde principal */
             border-radius: 9999px; /* full rounded */
             transition: background-color 0.3s, transform 0.1s;
             margin-top: 4px; /* Espacio entre el texto y el botón */
         }
         .step-link-button:hover {
-            background-color: #4338ca; /* Indigo 700 */
+            background-color: #024a27; /* Verde más oscuro para hover */
             transform: translateY(-1px);
+        }
+
+        /* --- Estilo para el Botón CONSULTAR EXPEDIENTE --- */
+        .consultar-button {
+            background-color: #036635; /* Verde principal */
+            color: white;
+            font-bold;
+            padding: 12px 20px; /* py-3 px-5 */
+            border-radius: 0.75rem; /* rounded-xl */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); /* shadow-md */
+            width: 100%;
+            display: block;
+        }
+        .consultar-button:hover {
+            background-color: #024a27; /* Un verde un poco más oscuro para el hover */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* shadow-lg */
+        }
+        .consultar-button:focus {
+            outline: none;
+            ring: 4px; /* focus:ring-4 */
+            ring-color: rgba(3, 102, 53, 0.5); /* focus:ring-judicial-red (con opacidad) */
+            ring-opacity: 0.5;
         }
 
     </style>
@@ -100,22 +133,51 @@
 </head>
 <body class="bg-gray-50 font-sans min-h-screen flex flex-col">
 
-    <!-- Caja de Mensajes Flotante (Reemplazo de alert()) -->
     <div id="messageBox" class="fixed top-5 right-5 p-4 rounded-xl text-white transition-opacity duration-300 opacity-0 z-50 shadow-lg" role="alert" aria-live="polite"></div>
 
-    <header class="header-bg text-white text-center py-4 text-xl font-extrabold shadow-md">
-        Consulta de Expedientes Judiciales
-    </header>
+    <div class="top-banner px-4 py-3 flex justify-between items-start">
+        <div class="space-y-1">
+            <h1 class="text-xl font-extrabold text-gray-700 leading-none">PODER JUDICIAL DEL PERÚ</h1>
+            <p class="text-xs text-gray-600 font-medium">Justicia Honorable, País Respetable</p>
+        </div>
+        
+        <div class="text-right">
+            <h2 class="text-lg font-bold text-gray-800 leading-none">Consulta de Expedientes</h2>
+            <p class="text-xs text-gray-500">Versión 2.5.0</p>
+            <p class="text-sm font-semibold text-judicial-red mt-1">Cortes Superiores de Justicia</p>
+        </div>
+    </div>
 
-    <div class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+    <header class="nav-bg text-white py-2 shadow-lg">
+        <div class="container mx-auto px-4 flex justify-between items-center text-sm font-semibold">
+            <div class="flex space-x-6">
+                <a href="#" class="hover:text-gray-200 transition duration-150">INICIO</a>
+                <a href="#" class="hover:text-gray-200 transition duration-150">VIDEOTUTORIALES</a>
+                <a href="#" class="hover:text-gray-200 transition duration-150">PREGUNTAS FRECUENTES</a>
+            </div>
+            <div id="timeInfo" class="text-right text-xs">
+                </div>
+        </div>
+    </header>
+    
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
+        <div class="w-full max-w-4xl mx-auto comunicado-box p-4 text-center rounded-lg shadow-md mb-8">
+            <h3 class="text-base font-extrabold text-judicial-red mb-2">COMUNICADO</h3>
+            <p class="text-sm text-gray-700 leading-relaxed">
+                A partir de la fecha, se ha incluido un nuevo campo como medida técnica de protección, para que solo las partes puedan acceder a sus expedientes; a requerimiento de la Autoridad Nacional de Protección de Datos Personales y la Dirección de Fiscalización e Instrucción del Ministerio de Justicia y Derechos Humanos - MINJUSDH.
+            </p>
+            <p class="text-xs font-semibold text-gray-800 mt-2">
+                Al amparo de la ley N° 29733, Ley de Protección de Datos Personales.
+            </p>
+        </div>
+        
         <div class="w-full max-w-4xl mx-auto">
             
-            <!-- Contenedor de Búsqueda -->
+            <p class="text-sm text-gray-600 font-semibold mb-3 italic">* La búsqueda se deberá realizar ingresando el número, año y especialidad del expediente tal como se registró inicialmente en el sistema.</p>
             <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-100" id="searchContainer">
-                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Parámetros de Búsqueda</h2>
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">BÚSQUEDA DE EXPEDIENTES</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Distrito Judicial -->
                     <div>
                         <label for="distrito" class="block text-sm font-medium text-gray-700 mb-1">Distrito Judicial (*)</label>
                         <select id="distrito" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
@@ -135,7 +197,6 @@
                         </select>
                     </div>
 
-                    <!-- Instancia -->
                     <div>
                         <label for="instancia" class="block text-sm font-medium text-gray-700 mb-1">Instancia (*)</label>
                         <select id="instancia" onchange="updateEspecialidad()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
@@ -147,7 +208,6 @@
                         </select>
                     </div>
 
-                    <!-- Especialidad -->
                     <div>
                         <label for="especialidad" class="block text-sm font-medium text-gray-700 mb-1">Especialidad (*)</label>
                         <select id="especialidad" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
@@ -155,20 +215,17 @@
                         </select>
                     </div>
 
-                    <!-- Año -->
                     <div>
                         <label for="anio" class="block text-sm font-medium text-gray-700 mb-1">Año (*)</label>
                         <input type="number" id="anio" placeholder="Ejemplo: 2025" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150" min="1900" max="2100">
                     </div>
                 </div>
                 
-                <!-- N° Expediente -->
                 <div class="mt-4">
                     <label for="expediente" class="block text-sm font-medium text-gray-700 mb-1">N° Expediente (*)</label>
                     <input type="text" id="expediente" placeholder="Ejemplo: 12345" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
                 </div>
 
-                <!-- Captcha -->
                 <div class="mt-6 flex flex-col sm:flex-row items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <div class="text-sm font-medium text-gray-700 shrink-0">Verificación de seguridad:</div>
                     <div class="captcha flex items-center gap-4 flex-grow">
@@ -177,13 +234,11 @@
                     </div>
                 </div>
 
-                <!-- Botón de Consulta -->
-                <button onclick="buscarExpediente()" class="w-full mt-6 bg-judicial-red hover:bg-red-700 text-white font-bold py-3 rounded-xl transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-judicial-red focus:ring-opacity-50">
+                <button onclick="buscarExpediente()" class="consultar-button">
                     CONSULTAR EXPEDIENTE
                 </button>
             </div>
 
-            <!-- Contenedor de Resultados -->
             <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl mt-8 border border-gray-100 result-container hidden" id="resultContainer">
                 <button onclick="mostrarBusqueda()" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-xl transition duration-150 mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -193,12 +248,20 @@
                 </button>
                 <div id="loadingIndicator" class="hidden text-center mt-6 text-lg font-medium text-judicial-red">Cargando resultados...</div>
                 
-                <!-- Resultados del Reporte Detallado se insertan aquí -->
                 <div id="reporteDetallado"></div>
             </div>
 
         </div>
     </div>
+
+    <footer class="footer-bg text-white text-center py-4 mt-auto">
+        <div class="h-3 bg-repeat-x bg-gray-600 mb-2" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCc+CjxyZWN0IHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCcgZmlsbD0nI2Q1ZDVkNScvPgo8cmVjdCB4PScxMycgeT0nMTMnIHdpZHRoPScxMiMgaGVpZ2h0PScxMiIgZmlsbD0nIzhjOGM4YycgLz4KPHJlY3QgeD0nMjUnIHk9JzI1JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM4YzhjOGMnIC8+CjxyZWN0IHg9JzEzJyB5PScyNScgd2lkdGg9JzEyJyBoZWlnaHQ9JzEyJyBmaWxsPScjYmJiYmJiJyAvPgo8cmVjdCB4PScyNScgeT0nMTMnIHdpZHRoPScxMiMgaGVpZ2h0PScxMiIgZmlsbD0nI2JiYmJmJyAvPgo8cmVjdCB4PScxJyB5PScxJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPHJlY3QgeD0nNDMnIHk9JzM3JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPC9zdmc+'); background-size: 50px 50px;"></div>
+        
+        <p class="text-sm font-light mb-1">Av. Paseo de la República S/N Palacio de Justicia, Cercado, Lima - Perú</p>
+        <p class="text-xs font-semibold mb-1">Copyright ® - 2016 Todos los derechos reservados</p>
+        <p class="text-xs font-light">Recomendado para Chrome, Mozilla Firefox, iExplorer 9 o versiones superiores</p>
+    </footer>
+
 
     <script>
         // --- Data y Mapeo ---
@@ -226,7 +289,7 @@
             URL_PDF_HEADER_KEY: 'URL EXPEDIENTE' 
         };
 
-        // --- Rango de Columnas para ETAPAS DEL PROCESO ---
+        // --- Rango de Columas para ETAPAS DEL PROCESO ---
         // U es el índice 20 (U=20)
         // AO es el índice 40 (AO=40)
         const ETAPAS_START_INDEX = 20; // Columna U
@@ -235,6 +298,32 @@
 
         // --- Utilidades ---
         
+        /**
+         * Actualiza la fecha y hora en tiempo real en el encabezado.
+         */
+        function updateTime() {
+            const now = new Date();
+            const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            
+            // Formatear la fecha como DD/MM/AAAA (ej. 13/10/2025)
+            const formattedDate = now.toLocaleDateString('es-PE', dateOptions);
+            // Formatear la hora como HH:MM:SS (ej. 14:48:43)
+            const formattedTime = now.toLocaleTimeString('es-PE', timeOptions);
+            
+            const timeInfoDiv = document.getElementById('timeInfo');
+            // Nota: Se utiliza un tiempo de sesión fijo por simplicidad, ya que el cálculo real
+            // de una sesión requiere lógica de servidor/cookies.
+            timeInfoDiv.innerHTML = `
+                Fecha: ${formattedDate}<br>
+                Hora: ${formattedTime}<br>
+                Tiempo restante de sesión: 04':26"
+            `;
+        }
+
+        // Llamar a updateTime() cada segundo
+        setInterval(updateTime, 1000);
+
         /**
          * Función para limpiar una cadena de texto, removiendo espacios, guiones y signos de puntuación, 
          * para hacer la comparación ultra-flexible. (Ej: 'LIMA-NORTE' -> 'LIMANORTE')
@@ -349,11 +438,20 @@
         document.addEventListener('DOMContentLoaded', () => {
             generarCaptcha();
             updateEspecialidad();
+            updateTime(); // Llamada inicial para mostrar la hora
         });
 
         function mostrarResults() {
              document.getElementById("searchContainer").classList.add("hidden");
             document.getElementById("resultContainer").classList.remove("hidden");
+        }
+        
+        // Vuelve al formulario de búsqueda
+        function mostrarBusqueda() {
+            document.getElementById("resultContainer").classList.add("hidden");
+            document.getElementById("searchContainer").classList.remove("hidden");
+            document.getElementById("reporteDetallado").innerHTML = "";
+            generarCaptcha();
         }
 
 
@@ -438,7 +536,7 @@
                 const allDataObjects = rows.map(r => {
                     const obj = {};
                     r.c.forEach((cell, index) => {
-                        // Usar el valor (v) o la cadena formateada (f) si el valor es null
+                        // Usar el valor (v) o la cadena formateada (f) if the value is null
                         obj[headers[index]] = (cell && cell.v !== undefined) ? cell.v : (cell && cell.f !== undefined) ? cell.f : "";
                     });
                     return obj;
@@ -490,7 +588,8 @@
                         }
                     }
                 }
-                
+            
+                // --- CONTINUACIÓN DEL BLOQUE DE CÓDIGO INICIAL (PARTE 1) ---
                 document.getElementById("loadingIndicator").classList.add("hidden");
 
                 if (foundMatch) {
@@ -520,7 +619,10 @@
                 console.error("Error al obtener o parsear Google Sheets:", e);
                 mostrarBusqueda(); 
             }
-        }
+        } // Cierre de la función buscarExpediente()
+
+
+        // --- CONTINUACIÓN DEL BLOQUE DE CÓDIGO INICIAL (PARTE 2) ---
 
         /**
          * Genera el HTML del reporte detallado (sección principal, partes procesales y etapas del proceso).
@@ -627,7 +729,7 @@
             // Si pdfUrl es null, no se genera el div de descarga.
 
             return `
-                <div class="report-section rounded-t-xl mt-0 bg-judicial-red">
+                <div class="report-section rounded-t-xl mt-0">
                     1. REPORTE DE EXPEDIENTE
                     <span class="text-sm font-normal">${displayExpediente}</span>
                 </div>
@@ -691,7 +793,7 @@
 
 
             return `
-                <div class="report-section bg-gray-700">
+                <div class="report-section">
                     2. PARTES PROCESALES
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
                 </div>
@@ -768,22 +870,20 @@
 
                     etapasHtml += `
                         <div class="flex items-start ${stepClass}">
-                            <!-- Icono de progreso (color gris uniforme) -->
                             <div class="w-3 h-3 mt-1.5 mr-3 rounded-full ${iconColor} flex-shrink-0"></div>
                             <div class="flex-grow">
                                 <strong class="block text-sm font-semibold uppercase ${headerColor}">${etapa.header}:</strong>
-                                <!-- Inserta el contenido que puede ser una fecha/texto o un botón -->
                                 ${etapa.contentHtml}
                             </div>
                         </div>
                     `;
                 });
             } else {
-                 etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de etapas procesales en el rango de columnas U a AO para este expediente.</p>`;
+                    etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de etapas procesales en el rango de columnas U a AO para este expediente.</p>`;
             }
 
             return `
-                <div class="report-section bg-gray-700">
+                <div class="report-section">
                     3. ETAPAS DEL PROCESO
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v5a1 1 0 001 1h3a1 1 0 100-2h-3V7z" clip-rule="evenodd" /></svg>
                 </div>
@@ -795,14 +895,6 @@
             `;
         }
 
-
-        // Vuelve al formulario de búsqueda
-        function mostrarBusqueda() {
-            document.getElementById("resultContainer").classList.add("hidden");
-            document.getElementById("searchContainer").classList.remove("hidden");
-            document.getElementById("reporteDetallado").innerHTML = "";
-            generarCaptcha();
-        }
     </script>
 </body>
 </html>
