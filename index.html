@@ -68,6 +68,9 @@
         .step-item {
             padding: 12px 0;
             border-bottom: 1px solid #e5e7eb; /* Separador gris claro */
+            display: flex; /* Nuevo: para alinear contenido y botón */
+            justify-content: space-between; /* Nuevo: para separar la descripción del botón */
+            align-items: flex-start; /* Asegura alineación superior */
         }
         .step-item:last-child {
             border-bottom: none; /* No hay borde después del último item */
@@ -84,12 +87,23 @@
             background-color: #036635; /* Verde principal */
             border-radius: 9999px; /* full rounded */
             transition: background-color 0.3s, transform 0.1s;
-            margin-top: 4px; /* Espacio entre el texto y el botón */
+            margin-top: 0px; 
+            white-space: nowrap; /* Evita que el botón se rompa */
         }
         .step-link-button:hover {
             background-color: #024a27; /* Verde más oscuro para hover */
             transform: translateY(-1px);
         }
+        
+        /* Estilo para mantener el formato de la celda de Excel (con saltos de línea) */
+        .step-description-pre {
+            white-space: pre-line; /* Mantiene saltos de línea y respeta el wrap de texto */
+            font-size: 0.875rem; /* text-sm */
+            color: #4b5563; /* text-gray-600 */
+            margin-top: 4px; /* Pequeño margen debajo del título de la etapa */
+            font-family: inherit; /* Usa la fuente principal, no monospace */
+        }
+
 
         /* --- Estilo para el Botón CONSULTAR EXPEDIENTE --- */
         .consultar-button {
@@ -193,9 +207,9 @@
     
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
         <div id="comunicadoBox" class="w-full max-w-4xl mx-auto comunicado-box p-4 text-center rounded-lg shadow-md mb-8">
-            <h3 class="text-base font-extrabold text-judicial-red mb-2">FACULTAD DE CIENCIAS JURIDICAS Y POLITICAS - TRABAJO PRESENTADO: </h3>
-            <p class="text-sm text-gray-700 leading-relaxed">
-                - Alumna: YULISA CHATA QUISPE 
+            <h3 class="text-base font-extrabold text-judicial-red mb-2">FACULTAD DE CIENCIAS JURIDICAS Y POLITICAS - TRABAJO PRESENTADO:</h3>
+            <p class="text-sm text-gray-700 leading-relaxed font-semibold">
+                - Alumna: YULISA CHATA QUISPE
             </p>
             <p class="text-xs font-semibold text-gray-800 mt-2">
                 Al amparo de la ley N° 29733, Ley de Protección de Datos Personales.
@@ -360,8 +374,9 @@
         <div class="h-3 bg-repeat-x bg-gray-600 mb-2" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCc+CjxyZWN0IHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCcgZmlsbD0nI2Q1ZDVkNScvPgo8cmVjdCB4PScx十三章IHk9JzEzJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM4YzhjOGMnIC8+CjxyZWN0IHg9JzI1JyB5PScyNScgd2lkdGg9JzEyJyBoZWlnaHQ9JzEyJyBmaWxsPScjOGM4YzhjJyAvPgo8cmVjdCB4PScx十三章IHk9JzI1JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyNiYmJiYmInIC8+CjxyZWN0IHg9JzI1JyB5PScx十三章IHdpZHRoPScxMiMgaGVpZ2h0PScxMiIgZmlsbD0nI2JiYmJmJyAvPgo8cmVjdCB4PScxJyB5PScxJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPHJlY3QgeD0nNDMnIHk9JzM3JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPC9zdmc+'); background-size: 50px 50px;"></div>
         
         <p class="text-sm font-light mb-1">UNIVERSIDAD NACIONAL DEL ALTIPLANO PUNO - PUNO - PERU</p>
+        
         <p class="text-xs font-semibold mb-1">Copyright ® - 2016 Todos los derechos reservados</p>
-        <p class="text-xs font-light">Recomendado para Chrome, Mozilla Firefox, Anroid,Iphone </p>
+        <p class="text-xs font-light">Recomendado para Chrome, Mozilla Firefox, iExplorer 9 o versiones superiores</p>
     </footer>
 
 
@@ -393,9 +408,9 @@
 
         // --- Rango de Columnas para ETAPAS DEL PROCESO ---
         // U es el índice 20 (U=20)
-        // AO es el índice 40 (AO=40)
+        // BK es el índice 62 (BK=62)
         const ETAPAS_START_INDEX = 20; // Columna U
-        const ETAPAS_END_INDEX = 40;   // Columna AO (inclusive)
+        const ETAPAS_END_INDEX = 62;   // Columna BK (inclusive)
 
 
         // --- Utilidades y Lógica de Interfaz ---
@@ -446,8 +461,8 @@
         function isUrl(text) {
             if (!text) return false;
             const str = text.toString().trim().toLowerCase();
-            // Criterios flexibles: debe ser largo y contener indicadores comunes de URL
-            return str.length > 20 && (str.startsWith('http') || str.includes('.com') || str.includes('drive.google') || str.includes('doc.google') || str.includes('sheet.google'));
+            // Criterios flexibles: debe ser largo y contener indicadores comunes de URL (especialmente Google Drive)
+            return str.length > 20 && (str.startsWith('http') || str.includes('drive.google.com'));
         }
         
         /**
@@ -535,7 +550,38 @@
             });
         }
         
-        // MODIFICADO: Función para mostrar la sección correcta (INICIO, VIDEOTUTORIALES, PREGUNTAS FRECUENTES)
+        /**
+         * Realiza la limpieza de la pantalla de búsqueda y formulario.
+         * Esta función es llamada por "Nueva Búsqueda" y ahora por "INICIO".
+         */
+        function mostrarBusqueda() {
+            // OCULTAR resultados
+            document.getElementById("resultContainer").classList.add("hidden");
+            // MOSTRAR formulario de búsqueda
+            document.getElementById("searchContainer").classList.remove("hidden");
+            // Limpiar el área de resultados
+            document.getElementById("reporteDetallado").innerHTML = "";
+            
+            generarCaptcha(); // Regenera el captcha
+
+            // Muestra el comunicado (solo si estamos en la sección de Búsqueda/INICIO)
+            if (!document.getElementById("sectionSearch").classList.contains("hidden")) {
+                document.getElementById("comunicadoBox").classList.remove("hidden"); 
+            }
+
+            // Limpia los campos de búsqueda del formulario
+            document.getElementById("distrito").value = "--SELECCIONAR";
+            document.getElementById("instancia").value = "--SELECCIONAR";
+            updateEspecialidad(); // Actualiza especialidad después de cambiar instancia
+            document.getElementById("anio").value = "";
+            document.getElementById("expediente").value = "";
+        }
+
+
+        /**
+         * Muestra la sección correcta (INICIO, VIDEOTUTORIALES, PREGUNTAS FRECUENTES).
+         * MODIFICADO: Si el destino es 'search' (INICIO), siempre llama a mostrarBusqueda() para resetear.
+         */
         function showSection(sectionId) {
             // Ocultar todas las secciones
             document.querySelectorAll('.content-section').forEach(content => {
@@ -545,13 +591,11 @@
             // Mostrar la sección seleccionada
             document.getElementById(`section${sectionId.charAt(0).toUpperCase() + sectionId.slice(1)}`).classList.remove('hidden');
 
-            // Lógica de visibilidad del comunicado
-            const isSearchSection = sectionId === 'search';
-            const isShowingResults = !document.getElementById("resultContainer").classList.contains("hidden");
-
-            if (isSearchSection && !isShowingResults) {
-                document.getElementById("comunicadoBox").classList.remove("hidden");
+            // Lógica para INICIO: Si se presiona INICIO, debe resetear la búsqueda
+            if (sectionId === 'search') {
+                mostrarBusqueda(); // Esto se encarga de mostrar el formulario, ocultar resultados y mostrar el comunicado
             } else {
+                // Si no es la sección de búsqueda, ocultamos el comunicado
                 document.getElementById("comunicadoBox").classList.add("hidden");
             }
         }
@@ -562,11 +606,14 @@
             generarCaptcha();
             updateEspecialidad();
             updateTime(); // Llamada inicial para mostrar la hora
-            // Inicia en la sección de Búsqueda (INICIO)
+            // Inicia en la sección de Búsqueda (INICIO), llamando a showSection() para inicializar correctamente
             showSection('search'); 
         });
 
-        // MODIFICADO: Ahora también controla la visibilidad del comunicado
+
+        /**
+         * Muestra los resultados y oculta el formulario de búsqueda.
+         */
         function mostrarResults() {
              document.getElementById("searchContainer").classList.add("hidden");
             document.getElementById("resultContainer").classList.remove("hidden");
@@ -574,25 +621,6 @@
             document.getElementById("comunicadoBox").classList.add("hidden"); 
         }
         
-        // MODIFICADO: Ahora también controla la visibilidad del comunicado y limpia los campos
-        function mostrarBusqueda() {
-            document.getElementById("resultContainer").classList.add("hidden");
-            document.getElementById("searchContainer").classList.remove("hidden");
-            document.getElementById("reporteDetallado").innerHTML = "";
-            generarCaptcha(); // Regenera el captcha
-
-            // Muestra el comunicado (solo si estamos en la sección de Búsqueda/INICIO)
-            if (!document.getElementById("sectionSearch").classList.contains("hidden")) {
-                document.getElementById("comunicadoBox").classList.remove("hidden"); 
-            }
-
-            // Limpia los campos de búsqueda
-            document.getElementById("distrito").value = "--SELECCIONAR";
-            document.getElementById("instancia").value = "--SELECCIONAR";
-            updateEspecialidad(); // Actualiza especialidad después de cambiar instancia
-            document.getElementById("anio").value = "";
-            document.getElementById("expediente").value = "";
-        }
 
 
         // --- Lógica de Búsqueda (CON DIAGNÓSTICO DE ERROR Y COLUMNAS FIJAS) ---
@@ -955,75 +983,89 @@
 
         /**
          * Auxiliar para generar el HTML de la sección de ETAPAS DEL PROCESO.
+         * MODIFICADO: Adaptado para manejar texto y URL dentro de la misma celda, separándolos
+         * y manteniendo los saltos de línea del texto descriptivo.
          */
         function generarReporteEtapas(headers, data) {
             let etapas = [];
             
-            // 1. Recorrer el rango de columnas U (índice 20) hasta AO (índice 40)
+            // 1. Recorrer el rango de columnas U (índice 20) hasta BK (índice 62)
             for (let i = ETAPAS_START_INDEX; i <= ETAPAS_END_INDEX; i++) {
                 const header = headers[i];
                 const rawValue = data[header] ? String(data[header]).trim() : '';
                 
                 if (rawValue && rawValue !== '---') {
-                    // Limpiar el encabezado (quitar números/guiones/caracteres extraños para display)
-                    const cleanedHeader = header.replace(/^\d+\.\s*/, '').replace(/[-_]/g, ' ').trim();
-                    
-                    let content;
-                    
-                    // Comprobación CRÍTICA: Si el valor es una URL, generamos un botón simplificado
-                    if (isUrl(rawValue)) {
-                        // El texto del botón es fijo: "VER DOCUMENTO"
-                        const buttonText = "VER DOCUMENTO";
-                        
-                        // Generamos el botón con un ícono de enlace
-                        content = `
-                            <a href="${rawValue}" target="_blank" class="step-link-button">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 10-2.828-2.828l-5.741 5.741a2 2 0 00-1.287 1.287l-1.01 4.706a1 1 0 001.26 1.26l4.706-1.01a2 2 0 001.287-1.287l5.741-5.741zM17 17a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                                </svg>
-                                ${buttonText}
-                            </a>
-                        `;
-                    } else {
-                        // Si no es URL, formateamos el valor (asumiendo que es una fecha o texto)
-                        const formattedValue = formatDate(rawValue);
-                        content = `<span class="text-sm text-gray-600">${formattedValue}</span>`;
-                    }
-                    
-                    etapas.push({
-                        header: cleanedHeader,
-                        contentHtml: content
+                    // --- Lógica de Parsing de la Celda Única (Texto + URL) ---
+                    const lines = rawValue.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                    let url = null;
+                    let textContent = [];
+
+                    lines.forEach(line => {
+                        if (isUrl(line)) {
+                            url = line;
+                        } else {
+                            textContent.push(line);
+                        }
                     });
+                    
+                    if (textContent.length > 0 || url) { // Solo si hay contenido o URL
+                        // Limpiar el encabezado (quitar números/guiones/caracteres extraños para display)
+                        const cleanedHeader = header.replace(/^\d+\.\s*/, '').replace(/[-_]/g, ' ').trim();
+                        
+                        etapas.push({
+                            header: cleanedHeader,
+                            text: textContent.join('\n'), // Unir el texto de nuevo con saltos de línea
+                            url: url
+                        });
+                    }
                 }
             }
 
             let etapasHtml = '';
-            const totalEtapas = etapas.length;
 
-            if (totalEtapas > 0) {
+            if (etapas.length > 0) {
                 // 2. Iterar sobre las etapas encontradas para generar el HTML
                 etapas.forEach((etapa, index) => {
-                    const stepClass = 'step-item';
                     const headerColor = 'text-gray-800';
                     const iconColor = 'bg-gray-400';
+                    
+                    // Contenido principal de la descripción (texto y fechas)
+                    let descriptionContent = `
+                        <strong class="block text-sm font-semibold uppercase ${headerColor}">${etapa.header}:</strong>
+                        ${etapa.text ? `<pre class="step-description-pre">${etapa.text}</pre>` : ''}
+                    `;
+                    
+                    // El botón solo se genera si se encontró una URL
+                    let buttonContent = etapa.url ? `
+                        <div class="ml-4 flex-shrink-0">
+                            <a href="${etapa.url}" target="_blank" class="step-link-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 10-2.828-2.828l-5.741 5.741a2 2 0 00-1.287 1.287l-1.01 4.706a1 1 0 001.26 1.26l4.706-1.01a2 2 0 001.287-1.287l5.741-5.741zM17 17a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                                </svg>
+                                VER DOCUMENTO
+                            </a>
+                        </div>` : '';
+
 
                     etapasHtml += `
-                        <div class="flex items-start ${stepClass}">
-                            <div class="w-3 h-3 mt-1.5 mr-3 rounded-full ${iconColor} flex-shrink-0"></div>
-                            <div class="flex-grow">
-                                <strong class="block text-sm font-semibold uppercase ${headerColor}">${etapa.header}:</strong>
-                                ${etapa.contentHtml}
+                        <div class="step-item">
+                            <div class="flex items-start flex-grow min-w-0">
+                                <div class="w-3 h-3 mt-1.5 mr-3 rounded-full ${iconColor} flex-shrink-0"></div>
+                                <div class="min-w-0 pr-4">
+                                    ${descriptionContent}
+                                </div>
                             </div>
+                            ${buttonContent}
                         </div>
                     `;
                 });
             } else {
-                    etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de etapas procesales en el rango de columnas U a AO para este expediente.</p>`;
+                    etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de seguimiento del expediente en el rango de columnas U a BK.</p>`;
             }
 
             return `
                 <div class="report-section">
-                    3. ETAPAS DEL PROCESO
+                    3. SEGUIMIENTO DEL EXPEDIENTE
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v5a1 1 0 001 1h3a1 1 0 100-2h-3V7z" clip-rule="evenodd" /></svg>
                 </div>
                 <div class="bg-white p-6 border-x border-b border-gray-200 rounded-b-xl">
