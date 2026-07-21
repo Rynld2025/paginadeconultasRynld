@@ -3,1084 +3,529 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Expedientes Judiciales</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Configuración de color para el encabezado judicial (VERDE OSCURO) */
-        .header-bg, .nav-bg, .footer-bg {
-            background-color: #036635; /* Dark Green */
-        }
-        /* Estilos para el banner superior gris/rojo */
-        .top-banner {
-            background-color: #edeaea; /* Gris muy claro, similar a la imagen */
-            border-bottom: 2px solid #8b0000; /* Borde rojo */
-        }
-        /* Estilos para el comunicado */
-        .comunicado-box {
-            border: 2px solid #8b0000; /* Borde rojo oscuro */
-            background-color: #fefefe; /* Fondo blanco */
-        }
-        
-        /* Estilos de reporte detallado - TODOS los títulos de sección usan este color verde */
-        .report-section {
-            background-color: #036635; 
-            color: white;
-            padding: 10px 20px;
-            font-weight: bold;
-            font-size: 1.125rem; /* text-lg */
-            border-radius: 0.5rem 0.5rem 0 0;
-            margin-top: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .report-grid-item {
-            display: grid;
-            grid-template-columns: 140px 1fr; /* Ajustado el ancho de la etiqueta */
-            gap: 0.5rem;
-            padding: 8px 0;
-            border-bottom: 1px dashed #eee;
-        }
-        .report-grid-item strong {
-            color: #333;
-            font-weight: 600;
-        }
-        .report-grid-item span {
-            color: #555;
-            font-weight: normal;
-        }
-        .download-button {
-            background-color: #036635;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 0.5rem;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            transition: background-color 0.3s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
-        }
-        .download-button:hover {
-            background-color: #024a27; /* Un verde un poco más oscuro para el hover */
-        }
-        
-        /* Estilo de item de etapa uniforme */
-        .step-item {
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e7eb; /* Separador gris claro */
-            display: flex; /* Nuevo: para alinear contenido y botón */
-            justify-content: space-between; /* Nuevo: para separar la descripción del botón */
-            align-items: flex-start; /* Asegura alineación superior */
-        }
-        .step-item:last-child {
-            border-bottom: none; /* No hay borde después del último item */
-        }
-        
-        /* Estilo para los botones de la etapa (VERDES) */
-        .step-link-button {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            font-size: 0.875rem; /* text-sm */
-            font-weight: 600; /* semi-bold */
-            color: white;
-            background-color: #036635; /* Verde principal */
-            border-radius: 9999px; /* full rounded */
-            transition: background-color 0.3s, transform 0.1s;
-            margin-top: 0px; 
-            white-space: nowrap; /* Evita que el botón se rompa */
-        }
-        .step-link-button:hover {
-            background-color: #024a27; /* Verde más oscuro para hover */
-            transform: translateY(-1px);
-        }
-        
-        /* Estilo para mantener el formato de la celda de Excel (con saltos de línea) */
-        .step-description-pre {
-            white-space: pre-line; /* Mantiene saltos de línea y respeta el wrap de texto */
-            font-size: 0.875rem; /* text-sm */
-            color: #4b5563; /* text-gray-600 */
-            margin-top: 4px; /* Pequeño margen debajo del título de la etapa */
-            font-family: inherit; /* Usa la fuente principal, no monospace */
-        }
-
-
-        /* --- Estilo para el Botón CONSULTAR EXPEDIENTE --- */
-        .consultar-button {
-            background-color: #036635; /* Verde principal */
-            color: white;
-            font-bold;
-            padding: 12px 20px; /* py-3 px-5 */
-            border-radius: 0.75rem; /* rounded-xl */
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); /* shadow-md */
-            width: 100%;
-            display: block;
-        }
-        .consultar-button:hover {
-            background-color: #024a27; /* Un verde un poco más oscuro para el hover */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* shadow-lg */
-        }
-        .consultar-button:focus {
-            outline: none;
-            ring: 4px; /* focus:ring-4 */
-            ring-color: rgba(3, 102, 53, 0.5); /* focus:ring-judicial-red (con opacidad) */
-            ring-opacity: 0.5;
-        }
-        
-        /* Estilos para el contenido de Preguntas Frecuentes */
-        .faq-item {
-            padding: 16px 0;
-            border-bottom: 1px solid #eee;
-        }
-        .faq-item:last-child {
-            border-bottom: none;
-        }
-        .faq-question {
-            color: #036635; /* Verde de la identidad visual */
-            font-size: 1.125rem; /* text-lg */
-            font-weight: 700; /* bold */
-            margin-bottom: 4px;
-        }
-        .faq-answer {
-            color: #4b5563; /* text-gray-600 */
-            font-size: 1rem; /* text-base */
-            line-height: 1.6;
-        }
-        /* Estilo para los enlaces de navegación como texto simple */
-        .nav-link {
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-radius: 0.25rem;
-            text-transform: uppercase;
-        }
-        .nav-link:hover {
-            background-color: #024a27; /* Verde más oscuro en hover */
-        }
-
-    </style>
-    <script>
-        // Configuración de Tailwind para usar la fuente Inter y colores personalizados
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'Arial', 'sans-serif'],
-                    },
-                    colors: {
-                        'judicial-red': '#8b0000',
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
-
-    <div id="messageBox" class="fixed top-5 right-5 p-4 rounded-xl text-white transition-opacity duration-300 opacity-0 z-50 shadow-lg" role="alert" aria-live="polite"></div>
-
-    <div class="top-banner px-4 py-3 flex justify-between items-start">
-        <div class="space-y-1">
-            <h1 class="text-xl font-extrabold text-gray-700 leading-none">PODER JUDICIAL DEL PERÚ</h1>
-            <p class="text-xs text-gray-600 font-medium">Justicia Honorable, País Respetable</p>
-        </div>
-        
-        <div class="text-right">
-            <h2 class="text-lg font-bold text-gray-800 leading-none">Consulta de Expedientes</h2>
-            <p class="text-xs text-gray-500">Versión 2.5.0</p>
-            <p class="text-sm font-semibold text-judicial-red mt-1">Cortes Superiores de Justicia</p>
-        </div>
-    </div>
-
-    <header class="nav-bg text-white py-2 shadow-lg">
-        <div class="container mx-auto px-4 flex justify-between items-center text-sm font-semibold">
-            <div class="flex space-x-2">
-                <div class="nav-link" onclick="showSection('search')">INICIO</div>
-                <div class="nav-link" onclick="showSection('video')">VIDEOTUTORIALES</div>
-                <div class="nav-link" onclick="showSection('faq')">PREGUNTAS FRECUENTES</div>
-            </div>
-            <div id="timeInfo" class="text-right text-xs">
-            </div>
-        </div>
-    </header>
+    <title>Dashboard Contable | Electro Puno S.A.A.</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
-        <div id="comunicadoBox" class="w-full max-w-4xl mx-auto comunicado-box p-4 text-center rounded-lg shadow-md mb-8">
-            <h3 class="text-base font-extrabold text-judicial-red mb-2">FACULTAD DE CIENCIAS JURIDICAS Y POLITICAS </h3>
-            <p class="text-xs font-semibold text-gray-800 mt-2">
-                CURSO :  GOBIERNO DIGITAL Y DERECHO INFORMÁTICO  
-            </p>
-            <p class="text-sm text-gray-700 leading-relaxed font-semibold">
-                DOCENTE:   DR. ESPINOZA COILA MICHAEL 
-            <p class="text-sm text-gray-700 leading-relaxed font-semibold">
-                TRABAJO PRESENTADO: YULISA CHATA QUISPE
-            </p>
-            <p class="text-xs font-semibold text-gray-800 mt-2">
-                Al amparo de la ley N° 29733, Ley de Protección de Datos Personales.
-            </p>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --primary-hover: #004085;
+            --success: #28a745;
+            --success-hover: #218838;
+            --warning: #ffc107;
+            --warning-hover: #e0a800;
+            --secondary: #6c757d;
+            --secondary-hover: #5a6268;
+            --bg: #f4f7fa;
+            --card-bg: #ffffff;
+            --border: #e0e6ed;
+            --shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; color: #333; }
+        
+        .navbar { 
+            background: var(--primary); color: white; padding: 0.8rem 1.5rem; display: flex; 
+            justify-content: space-between; align-items: center;
+        }
+        .navbar h1 { margin: 0; font-size: 1.2rem; }
+        .container { max-width: 1420px; margin: 1rem auto; padding: 0 15px; }
+        
+        .search-card { 
+            background: var(--card-bg); padding: 12px 15px; border-radius: 8px; 
+            box-shadow: var(--shadow); margin-bottom: 1rem; border: 1px solid var(--border);
+        }
+        .single-row-container { display: flex; align-items: flex-end; justify-content: space-between; gap: 15px; width: 100%; }
+        .group-box { display: flex; align-items: flex-end; gap: 8px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; background-color: #f8fafc; }
+        .input-group { display: flex; flex-direction: column; gap: 3px; }
+        .input-group label { font-size: 0.7rem; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.3px; }
+        input[type="text"] { padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; outline: none; font-size: 0.8rem; height: 30px; box-sizing: border-box; }
+        input[type="text"]:focus { border-color: var(--primary); }
+        .file-input-container { border: 1px solid #cbd5e1; padding: 3px 6px; background: white; border-radius: 4px; height: 30px; display: flex; align-items: center; box-sizing: border-box; }
+        .btn { height: 30px; padding: 0 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.75rem; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; box-sizing: border-box; }
+        .btn-search { background: var(--primary); color: white; }
+        .btn-search:hover { background: var(--primary-hover); }
+        .btn-zip { background: var(--warning); color: #212529; }
+        .btn-zip:hover { background: var(--warning-hover); }
+        .btn-clear { background: var(--secondary); color: white; width: 90px; }
+        .btn-clear:hover { background: var(--secondary-hover); }
+        .btn-print { background: var(--success); color: white; }
+        .btn-print:hover { background: var(--success-hover); }
+        
+        .progress-box { display: none; width: 100%; background: #e9ecef; border-radius: 4px; margin-top: 10px; position: relative; height: 20px; overflow: hidden; border: 1px solid #ced4da; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #28a745, #34ce57); }
+        .progress-text { position: absolute; width: 100%; text-align: center; font-size: 0.75rem; font-weight: bold; color: #000; top: 1px; }
+
+        .main-dashboard { display: none; }
+        .print-header-franja { display: flex; align-items: center; gap: 10px; background: var(--primary); color: white; padding: 8px 12px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; }
+        .print-header-franja .empresa { font-weight: bold; font-style: italic; }
+        .info-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 15px; margin-bottom: 12px; }
+        .card { background: var(--card-bg); border-radius: 6px; padding: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+        .card-title { font-size: 0.75rem; font-weight: bold; color: var(--primary); text-transform: uppercase; margin-bottom: 6px; border-bottom: 2px solid var(--bg); padding-bottom: 4px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .data-table td { padding: 4px 0; border-bottom: 1px solid #f8f9fa; }
+        .label { font-weight: 600; color: #555; width: 40%; }
+        .value { text-align: right; font-weight: 700; color: #000; }
+
+        .asiento-container { background: white; border-radius: 6px; padding: 15px; border: 1px solid var(--border); margin-top: 12px; box-shadow: var(--shadow); }
+        .asiento-table { width: 100%; border-collapse: collapse; font-family: 'Consolas', monospace; font-size: 11px; table-layout: fixed; }
+        .asiento-table th { background: #f8f9fa; padding: 6px 4px; border: 1px solid var(--border); color: var(--primary); font-size: 10.5px; text-align: center; }
+        .asiento-table td { padding: 5px 4px; border-bottom: 1px dotted #ddd; }
+        .col-pct { width: 4%; } .col-clv { width: 5%; } .col-cta { width: 11%; } .col-usd { width: 12%; } .col-pen { width: 12%; } .col-fec { width: 11%; } .col-glo { width: 45%; }
+        .linea-cruce { text-align: center; font-weight: bold; color: #999; padding: 8px 0 !important; font-size: 11px; }
+        .nota-cuadre { margin-top: 12px; padding: 6px 10px; background-color: #f8f9fa; border-left: 4px solid var(--primary); font-size: 11px; color: #555; }
+        .firma-contenedor { display: flex; justify-content: flex-end; margin-top: 12px; }
+        .firma-texto { font-size: 11px; color: #555; font-style: italic; }
+        .separador-informativo { background-color: #fff3cd; color: #856404; text-align: center; font-weight: bold; padding: 6px !important; border: 1px solid #ffeeba; }
+
+        @media print {
+            @page { size: landscape; margin: 0.5cm; }
+            html, body { width: 100%; background: white !important; }
+            .no-print { display: none !important; }
+            .container { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .main-dashboard { display: block !important; }
+            .print-header-franja { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .separador-informativo { background-color: #fff3cd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- PANTALLA DE BLOQUEO POR CONTRASEÑA -->
+<div id="pantalla-bloqueo" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0056b3; display:flex; justify-content:center; align-items:center; z-index:99999;">
+    <div style="background:white; padding:35px; border-radius:10px; text-align:center; box-shadow:0 8px 20px rgba(0,0,0,0.3); width: 320px;">
+        <h3 style="margin-top:0; color:#0056b3;">ELECTRO PUNO S.A.A.</h3>
+        <p style="font-size:13px; color:#666; margin-bottom: 20px;">Ingrese la contraseña autorizada para acceder al sistema:</p>
+        <input type="password" id="input-password" placeholder="Contraseña..." style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:15px; box-sizing: border-box; font-size: 14px;"><br>
+        <button onclick="verificarPassword()" style="background:#0056b3; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; width: 100%; font-size: 14px;">Ingresar al Sistema</button>
+        <p id="error-pass" style="color: #dc3545; font-size: 12px; margin-top: 10px; display: none;">Contraseña incorrecta</p>
+    </div>
+</div>
+
+<div class="navbar no-print">
+    <h1>ELECTRO PUNO S.A.A. | <span style="font-weight: 300;">Analisis de Asiento Propuesta</span></h1>
+</div>
+
+<div class="container">
+    <div class="search-card no-print">
+        <div class="single-row-container">
+            <div class="input-group">
+                <label>Excel Origen</label>
+                <div class="file-input-container">
+                    <input type="file" id="excelFile" accept=".xlsx, .xls, .xlsm" style="font-size: 0.75rem; width: 170px;">
+                </div>
+            </div>
+            
+            <div class="group-box">
+                <div class="input-group">
+                    <label>Análisis Individual</label>
+                    <input type="text" id="facturaInput" placeholder="N° de Factura..." style="width: 130px;">
+                </div>
+                <button class="btn btn-search" onclick="buscarFacturaIndividual()">ANALIZAR</button>
+                <button class="btn btn-print" onclick="window.print()">🖨️ GENERAR PDF IND.</button>
+            </div>
+            
+            <div class="group-box">
+                <div class="input-group">
+                    <label>Masiv.Rang. Inicial</label>
+                    <input type="text" id="facturaDesde" placeholder="Ej: 01-F102-..." style="width: 130px;">
+                </div>
+                <div class="input-group">
+                    <label>Masiv.Rang. Final</label>
+                    <input type="text" id="facturaHasta" placeholder="Ej: 01-F102-..." style="width: 130px;">
+                </div>
+                <button class="btn btn-zip" onclick="generarZipMasivo()">📁 GENERAR PDF.MASIV.</button>
+            </div>
+
+            <button class="btn btn-clear" onclick="limpiar()">🗑️ LIMPIAR</button>
         </div>
         
-        <div class="w-full max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-100" id="mainContentContainer">
-            
-            <div id="sectionSearch" class="content-section">
-                
-                <p class="text-sm text-gray-600 font-semibold mb-3 italic">* Para la búsqueda se deberá ingresar los datos correctamente.</p>
-                
-                <div id="searchContainer">
-                    <h2 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">BÚSQUEDA DE EXPEDIENTES</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="distrito" class="block text-sm font-medium text-gray-700 mb-1">Distrito Judicial (*)</label>
-                            <select id="distrito" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
-                                <option>--SELECCIONAR</option>
-                                <option>AMAZONAS</option><option>ANCASH</option><option>APURIMAC</option>
-                                <option>AREQUIPA</option><option>AYACUCHO</option><option>CAJAMARCA</option>
-                                <option>CALLAO</option><option>CAÑETE</option><option>CUSCO</option>
-                                <option>DEL SANTA</option><option>HUANCAVELICA</option><option>HUANUCO</option>
-                                <option>HUAURA</option><option>ICA</option><option>JUNIN</option>
-                                <option>LA LIBERTAD</option><option>LAMBAYEQUE</option><option>LIMA</option>
-                                <option>LIMA ESTE</option><option>LIMA NORTE</option><option>LIMA SUR</option>
-                                <option>LORETO</option><option>MADRE DE DIOS</option><option>MOQUEGUA</option>
-                                <option>PASCO</option><option>PIURA</option><option>PUNO</option>
-                                <option>SAN MARTIN</option><option>SELVA CENTRAL</option><option>SULLANA</option>
-                                <option>TACNA</option><option>TUMBES</option><option>UCAYALI</option>
-                                <option>VENTANILLA - LIMA NOROESTE</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="instancia" class="block text-sm font-medium text-gray-700 mb-1">Instancia (*)</label>
-                            <select id="instancia" onchange="updateEspecialidad()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
-                                <option>--SELECCIONAR</option>
-                                <option>JUZGADO DE PAZ LETRADO</option>
-                                <option>JUZGADO ESPECIALIZADO</option>
-                                <option>JUZGADO MIXTO</option>
-                                <option>SALA SUPERIOR</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="especialidad" class="block text-sm font-medium text-gray-700 mb-1">Especialidad (*)</label>
-                            <select id="especialidad" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
-                                <option>--SELECCIONAR</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="anio" class="block text-sm font-medium text-gray-700 mb-1">Año (*)</label>
-                            <input type="number" id="anio" placeholder="Ejemplo: 2025" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150" min="1900" max="2100">
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <label for="expediente" class="block text-sm font-medium text-gray-700 mb-1">N° Expediente (*)</label>
-                        <input type="text" id="expediente" placeholder="Ejemplo: 12345" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-judicial-red focus:border-judicial-red transition duration-150">
-                    </div>
-
-                    <div class="mt-6 flex flex-col sm:flex-row items-center gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div class="text-sm font-medium text-gray-700 shrink-0">Verificación de seguridad:</div>
-                        <div class="captcha flex items-center gap-4 flex-grow">
-                            <span class="captcha-code text-2xl font-extrabold tracking-widest bg-gray-300 text-gray-800 px-4 py-2 rounded-lg select-none shadow-inner" id="captchaCode"></span>
-                            <input type="text" id="captchaInput" placeholder="Ingrese el código" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 uppercase" maxlength="5">
-                        </div>
-                    </div>
-
-                    <button onclick="buscarExpediente()" class="consultar-button mt-6">
-                        CONSULTAR EXPEDIENTE
-                    </button>
-                </div>
-
-                <div class="mt-8 result-container hidden" id="resultContainer">
-                    <button onclick="mostrarBusqueda()" class="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-xl transition duration-150 mb-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                        </svg>
-                        Nueva Búsqueda
-                    </button>
-                    <div id="loadingIndicator" class="hidden text-center mt-6 text-lg font-medium text-judicial-red">Cargando resultados...</div>
-                    
-                    <div id="reporteDetallado"></div>
-                </div>
-
-            </div>
-            <div id="sectionVideo" class="content-section hidden">
-                <h2 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">GUÍA VISUAL DEL SISTEMA</h2>
-                
-                <div class="w-full aspect-video bg-gray-200 rounded-lg overflow-hidden shadow-xl">
-                    <iframe 
-                        src="https://www.youtube.com/embed/5DZBJXYF0Tk" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen 
-                        class="w-full h-full"
-                        title="Video Tutorial - UNIVERSIDAD NACIONAL DEL ALTIPLANO">
-                    </iframe>
-                </div>
-
-                <div class="mt-4 text-center">
-                    <p class="text-sm text-gray-600 italic">Este video proporciona una guía introductoria sobre las actividades de la universidad, pero su estructura de reproducción es similar a un tutorial del sistema de consulta.</p>
-                </div>
-            </div>
-            <div id="sectionFaq" class="content-section hidden">
-                <h2 class="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">PREGUNTAS FRECUENTES (FAQ)</h2>
-                
-                <div class="space-y-4 divide-y divide-gray-100">
-                    
-                    <div class="faq-item">
-                        <div class="faq-question">¿SE DEBE HACER ALGÚN TIPO DE PAGO PARA REALIZAR LAS BÚSQUEDAS?</div>
-                        <div class="faq-answer">
-                            <span class="font-bold text-judicial-red">NO</span>, el sistema es gratuito y de libre acceso al público en general.
-                        </div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">¿QUÉ ME OFRECE EL SISTEMA?</div>
-                        <div class="faq-answer">
-                            El sistema te permite realizar búsquedas de un expediente. Se puede realizar búsquedas de los expedientes judiciales de la corte superior, tanto por código o ingresando ciertos datos pertenecientes al expediente. Se puede visualizar las resoluciones emitidas por las cortes, y la información en tiempo real.
-                        </div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">¿CÓMO BUSCAR MI EXPEDIENTE?</div>
-                        <div class="faq-answer">
-                            Ingresar a: <a href="http://cej.pj.gob.pe/cej/" target="_blank" class="text-blue-600 hover:text-blue-800 underline">http://cej.pj.gob.pe/cej/</a>, seleccionar el tipo de búsqueda (por codigo o por filtro), seleccionar o ingresar los datos solicitados y click en el botón Consultar. Para un mejor manejo del Sistema, se sugiere visualizar la página de **Video Tutoriales**.
-                        </div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">¿QUÉ SON LOS DISTRITOS JUDICIALES?</div>
-                        <div class="faq-answer">
-                            Son áreas de competencia de una determinada Corte Superior establecidas por ley.
-                        </div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">¿QUÉ SON LAS INSTANCIAS?</div>
-                        <div class="faq-answer">
-                            Son jerarquías que se maneja en pirámide de justicia.
-                        </div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question">¿QUÉ SON LAS ESPECIALIDADES?</div>
-                        <div class="faq-answer">
-                            Es una clasificación del expediente, el cual puede ser de tipo **Civil**, **Familia**, **Laboral**, etc.
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-            </div>
+        <div class="progress-box" id="progresoContenedor">
+            <div class="progress-bar" id="progresoBarra"></div>
+            <div class="progress-text" id="progresoTexto">Esperando inicio...</div>
+        </div>
     </div>
 
-    <footer class="footer-bg text-white text-center py-4 mt-auto">
-        <div class="h-3 bg-repeat-x bg-gray-600 mb-2" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCc+CjxyZWN0IHdpZHRoPSc1MCcgaGVpZ2h0PSc1MCcgZmlsbD0nI2Q1ZDVkNScvPgo8cmVjdCB4PScx十三章IHk9JzEzJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM4YzhjOGMnIC8+CjxyZWN0IHg9JzI1JyB5PScyNScgd2lkdGg9JzEyJyBoZWlnaHQ9JzEyJyBmaWxsPScjOGM4YzhjJyAvPgo8cmVjdCB4PScx十三章IHk9JzI1JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyNiYmJiYmInIC8+CjxyZWN0IHg9JzI1JyB5PScx十三章IHdpZHRoPScxMiMgaGVpZ2h0PScxMiIgZmlsbD0nI2JiYmJmJyAvPgo8cmVjdCB4PScxJyB5PScxJyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPHJlY3QgeD0nNDMnIHk9JzM3JyB3aWR0aD0nMTInIGhlaWdodD0nMTInIGZpbGw9JyM1ZDVkNScgLz4KPC9zdmc+'); background-size: 50px 50px;"></div>
-        
-        <p class="text-sm font-light mb-1">UNIVERSIDAD NACIONAL DEL ALTIPLANO PUNO - PUNO - PERU</p>
-        
-        <p class="text-xs font-semibold mb-1">Copyright ® - 2016 Todos los derechos reservados</p>
-        <p class="text-xs font-light">Recomendado para Chrome, Mozilla Firefox, iExplorer 9 o versiones superiores</p>
-    </footer>
+    <div id="dashboard" class="main-dashboard">
+        <div class="print-header-franja">
+            <span class="empresa">ELECTRO PUNO S.A.A.</span>
+            <span>|</span>
+            <span class="depto">Departamento de Contabilidad y Activo Fijo - Ingresos</span>
+        </div>
 
+        <div class="info-grid">
+            <div class="card">
+                <div class="card-title">DATOS GENERALES DEL CLIENTE</div>
+                <table class="data-table" id="tablaCliente"></table>
+            </div>
+            <div class="card">
+                <div class="card-title" style="text-align: center;">RESUMEN DE FACTURA</div>
+                <table class="data-table" id="tablaFinanciera"></table>
+            </div>
+        </div>
 
-    <script>
-        // --- Data y Mapeo ---
-        const especialidades = {
-            "--SELECCIONAR": ["--SELECCIONAR"],
-            "JUZGADO DE PAZ LETRADO": ["--SELECCIONAR", "CIVIL", "CONTENCIOSO ADMINISTRATIVO", "FAMILIA CIVIL", "FAMILIA TUTELAR", "LABORAL"],
-            "JUZGADO ESPECIALIZADO": ["--SELECCIONAR", "CIVIL", "FAMILIA CIVIL", "FAMILIA TUTELAR"],
-            "JUZGADO MIXTO": ["--SELECCIONAR", "CIVIL", "CONTENCIOSO ADMINISTRATIVO", "FAMILIA CIVIL", "FAMILIA TUTELAR", "LABORAL"],
-            "SALA SUPERIOR": ["--SELECCIONAR", "CIVIL", "CONTENCIOSO ADMINISTRATIVO", "FAMILIA CIVIL", "FAMILIA TUTELAR", "LABORAL"]
+        <div class="asiento-container">
+            <div class="card-title" style="text-align: center; font-size: 0.85rem;">PROPUESTA DE ASIENTO CONTABLE PARA FINANZAS</div>
+            <table class="asiento-table" id="asientoBody"></table>
+            
+            <div class="nota-cuadre">NOTA: Trx FB01, Clase Doc. TC, Moneda USD.</div>
+            <div class="firma-contenedor"><div class="firma-texto">®ByRynldLP</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- BLOQUEOS DE SEGURIDAD (Clic derecho y Atajos F12/Ctrl+U) ---
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (
+            e.key === 'F12' || 
+            (e.ctrlKey && e.key.toLowerCase() === 'u') || 
+            (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase())) ||
+            (e.ctrlKey && e.key.toLowerCase() === 's')
+        ) {
+            e.preventDefault();
+        }
+    });
+
+    // --- FUNCIÓN DE CONTRASEÑA ---
+    function verificarPassword() {
+        const pass = document.getElementById('input-password').value;
+        // Cambia 'Ingresos*2' por la clave que desees otorgar
+        if (pass === 'Ingresos*2') {
+            document.getElementById('pantalla-bloqueo').style.display = 'none';
+        } else {
+            const errorMsg = document.getElementById('error-pass');
+            errorMsg.style.display = 'block';
+            document.getElementById('input-password').value = '';
+        }
+    }
+
+    // Permitir ingresar presionando la tecla Enter en el input de contraseña
+    document.getElementById('input-password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            verificarPassword();
+        }
+    });
+
+    // --- LÓGICA ORIGINAL DE TU SISTEMA ---
+    let rawData = [];
+    document.getElementById('excelFile').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, {type:'array'});
+            const sheet = wb.Sheets[wb.SheetNames.find(n => n.toUpperCase()==="FACTURAS") || wb.SheetNames[0]];
+            rawData = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""});
+            alert("Base de datos de Facturas - cargado correctamente.");
         };
-        
-        // La URL de Google Sheets se mantiene
-        const sheetURL = "https://docs.google.com/spreadsheets/d/1YykbF710wRkZze-A3Kf8OWt15GOR0DPznHP1Dp8VXEc/gviz/tq?tqx=out:json";
+        reader.readAsArrayBuffer(e.target.files[0]);
+    });
 
-        // --- Mapeo de Columna Fija (Índices basados en 0, es decir: A=0, B=1, C=2, D=3, E=4) ---
-        const COLUMN_INDICES = {
-            DISTRITO: 0, // Columna A
-            INSTANCIA: 1, // Columna B
-            ESPECIALIDAD: 2, // Columna C
-            ANIO: 3, // Columna D
-            EXPEDIENTE: 4, // Columna E (¡El campo de validación principal!)
-            NRO_EXPEDIENTE_DISPLAY: 4,
-            
-            // La URL del PDF se buscará por el encabezado "URL EXPEDIENTE"
-            URL_PDF_HEADER_KEY: 'URL EXPEDIENTE' 
+    function formatearNumero(num) {
+        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function limpiar() {
+        document.getElementById('dashboard').style.display='none';
+        document.getElementById('facturaInput').value="";
+        document.getElementById('facturaDesde').value="";
+        document.getElementById('facturaHasta').value="";
+        document.getElementById('progresoContenedor').style.display='none';
+        document.title = "Dashboard Contable | Electro Puno S.A.A.";
+    }
+
+    let datosPdfActual = {};
+
+    function procesarFilaAsiento(fila) {
+        const d = {
+            rucCliente: fila[2],                                   
+            ctaDeudor: fila[3],                        
+            nomEmpresa: String(fila[4] || "EMPRESA").trim(),       
+            nroFactura: String(fila[5] || "").trim(),              
+            fechaDoc: fila[6],                  
+            uDeudor: parseFloat(fila[7]) || 0,                     // Col H (Facturado USD)
+            tipoCambio: parseFloat(fila[8]) || 0,                  
+            sDeudor: parseFloat(fila[9]) || 0,                     // Col J (Facturado PEN)
+            fV1: fila[12],                                        
+            ctaBanco: fila[14],          
+            uBanco: parseFloat(fila[15]) || 0,                     // Col P
+            sBanco: parseFloat(fila[16]) || 0,                     // Col Q
+            tipoDet: String(fila[18] || "").trim().toUpperCase(),  
+            fV2: fila[19],                                        
+            sDetracc: parseFloat(fila[20]) || 0,                   // Col U
+            uDetracc: parseFloat(fila[21]) || 0                    // Col V
         };
 
-        // --- Rango de Columnas para ETAPAS DEL PROCESO ---
-        // U es el índice 20 (U=20)
-        // BK es el índice 62 (BK=62)
-        const ETAPAS_START_INDEX = 20; // Columna U
-        const ETAPAS_END_INDEX = 62;   // Columna BK (inclusive)
+        let valJ = d.sDeudor;    let valH = d.uDeudor;
+        let valQ = d.sBanco;     let valP = d.uBanco;
+        let valU = d.sDetracc;   let valV = d.uDetracc;
 
+        let pctBanco = "", pctDetrac = "", pctContra = "", pctDeudor = "";
+        let difSoles = 0, difUSD = 0;
 
-        // --- Utilidades y Lógica de Interfaz ---
+        document.title = `${d.nroFactura}- ${d.nomEmpresa} Elpu-Ingresos`;
+        document.getElementById('tablaCliente').innerHTML = `
+            <tr><td class="label">Empresa</td><td class="value">${d.nomEmpresa}</td></tr>
+            <tr><td class="label">RUC</td><td class="value">${d.rucCliente}</td></tr>
+            <tr><td class="label">Deudor</td><td class="value">${d.ctaDeudor}</td></tr>
+        `;
+        document.getElementById('tablaFinanciera').innerHTML = `
+            <tr><td class="label">FACTURA</td><td class="value">${d.nroFactura}</td></tr>
+            <tr><td class="label">FECHA DE DOC</td><td class="value">${d.fechaDoc}</td></tr>
+            <tr><td class="label">IMPORTE USD</td><td class="value">$ ${formatearNumero(d.uDeudor)}</td></tr>
+            <tr><td class="label">TIPO DE CAMBIO</td><td class="value">${d.tipoCambio.toFixed(3)}</td></tr>
+            <tr><td class="label">TOTAL PEN</td><td class="value">S/ ${formatearNumero(d.sDeudor)}</td></tr>
+            <tr><td class="label">DETRACCION</td><td class="value">${d.tipoDet || 'EN BLANCO'}</td></tr>
+        `;
+
+        let htmlAsiento = `<thead><tr><th class="col-pct">%</th><th class="col-clv">CLV</th><th class="col-cta">CUENTA</th><th class="col-usd">USD</th><th class="col-pen">PEN</th><th class="col-fec">FECHA VALOR</th><th class="col-glo">GLOSA / DESCRIPCIÓN</th></tr></thead>`;
+        htmlAsiento += `<tr><td colspan="3"></td><td colspan="2" class="linea-cruce">--------- XX ---------</td><td style="text-align:center; font-weight:bold">Fecha Doc.</td><td>${d.fechaDoc}</td></tr>`;
+
+        if (d.tipoDet === "DETRACCION") {
+            pctBanco = "90%"; pctDetrac = "10%"; pctDeudor = "100%";
+            difSoles = valJ - valQ - valU; 
+            difUSD = valH - valP - valV;
+
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctBanco}</td><td style="text-align:center">40</td><td>${d.ctaBanco}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDetrac}</td><td style="text-align:center">40</td><td>1041118041</td><td style="text-align:right">${formatearNumero(valV)}</td><td style="text-align:right">${formatearNumero(valU)}</td><td style="text-align:center">${d.fV2}</td><td>DEP. FOSE ${d.nomEmpresa} ALQUILER DE INFR. DETRACCION</td></tr>`;
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDeudor}</td><td style="text-align:center">15</td><td>${d.ctaDeudor}</td><td style="text-align:right">${formatearNumero(valP + valV)}</td><td style="text-align:right">${formatearNumero(valQ + valU)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
         
-        /**
-         * Actualiza la fecha y hora en tiempo real en el encabezado.
-         */
-        function updateTime() {
-            const now = new Date();
-            const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
-            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-            
-            // Formatear la fecha como DD/MM/AAAA (ej. 13/10/2025)
-            const formattedDate = now.toLocaleDateString('es-PE', dateOptions);
-            // Formatear la hora como HH:MM:SS (ej. 14:48:43)
-            const formattedTime = now.toLocaleTimeString('es-PE', timeOptions);
-            
-            const timeInfoDiv = document.getElementById('timeInfo');
-            // Nota: Se utiliza un tiempo de sesión fijo por simplicidad, ya que el cálculo real
-            // de una sesión requiere lógica de servidor/cookies.
-            timeInfoDiv.innerHTML = `
-                Fecha: ${formattedDate}<br>
-                Hora: ${formattedTime}<br>
-                Tiempo restante de sesión: 04':26"
-            `;
-        }
+        } else if (d.tipoDet === "AUTO DETRAC.") {
+            pctBanco = "100%"; pctDetrac = "10%"; pctContra = "10%"; pctDeudor = "100%";
+            difSoles = valJ - valQ;
+            difUSD = valH - valP;
 
-        // Llamar a updateTime() cada segundo
-        setInterval(updateTime, 1000);
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctBanco}</td><td style="text-align:center">40</td><td>${d.ctaBanco}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDetrac}</td><td style="text-align:center">40</td><td>1041118041</td><td style="text-align:right">${formatearNumero(valV)}</td><td style="text-align:right">${formatearNumero(valU)}</td><td style="text-align:center">${d.fV2}</td><td>DEP. FOSE ${d.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION</td></tr>`;
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctContra}</td><td style="text-align:center">50</td><td>1041102132</td><td style="text-align:right">${formatearNumero(valV)}</td><td style="text-align:right">${formatearNumero(valU)}</td><td style="text-align:center">${d.fV2}</td><td>DEP. FOSE ${d.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION</td></tr>`;
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDeudor}</td><td style="text-align:center">15</td><td>${d.ctaDeudor}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
+        
+        } else {
+            pctBanco = "100%"; pctDeudor = "100%";
+            difSoles = valJ - valQ;
+            difUSD = valH - valP;
 
-        /**
-         * Función para limpiar una cadena de texto, removiendo espacios, guiones y signos de puntuación, 
-         * para hacer la comparación ultra-flexible. (Ej: 'LIMA-NORTE' -> 'LIMANORTE')
-         * @param {string} text 
-         * @returns {string} Texto limpio y en mayúsculas.
-         */
-        function ultraClean(text) {
-            if (!text) return "";
-            // Elimina cualquier caracter que no sea una letra o número, y convierte a mayúsculas
-            return text.toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); 
-        }
-
-        /**
-         * Verifica si una cadena parece ser una URL válida (inicia con http o tiene estructura de link).
-         * @param {string} text 
-         * @returns {boolean}
-         */
-        function isUrl(text) {
-            if (!text) return false;
-            const str = text.toString().trim().toLowerCase();
-            // Criterios flexibles: debe ser largo y contener indicadores comunes de URL (especialmente Google Drive)
-            return str.length > 20 && (str.startsWith('http') || str.includes('drive.google.com'));
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctBanco}</td><td style="text-align:center">40</td><td>${d.ctaBanco}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDeudor}</td><td style="text-align:center">50</td><td>${d.ctaDeudor}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
         }
         
-        /**
-         * Intenta formatear una cadena de texto a formato DD/MM/AAAA si parece una fecha.
-         * @param {string} dateString 
-         * @returns {string} Fecha formateada o cadena original.
-         */
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            
-            // Intenta detectar el formato de fecha ISO (YYYY-MM-DD o YYYY/MM/DD) o fecha de hoja de cálculo (MM/DD/YYYY)
-            const parts = dateString.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/) || dateString.match(/(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
-            
-            if (parts && parts.length === 4) {
-                let year, month, day;
-                if (parts[1].length === 4) { // Formato YYYY-MM-DD
-                    year = parts[1];
-                    month = parts[2];
-                    day = parts[3];
-                } else { // Formato MM-DD-YYYY o similar (común en Sheets)
-                    year = parts[3];
-                    month = parts[1];
-                    day = parts[2];
-                }
-                
-                // Asegura que mes y día tengan dos dígitos
-                const paddedMonth = month.padStart(2, '0');
-                const paddedDay = day.padStart(2, '0');
-                
-                return `${paddedDay}/${paddedMonth}/${year}`;
-            }
-            
-            // Si no coincide con un patrón de fecha, devuelve el original
-            return dateString;
-        }
+        htmlAsiento += `<tr><td colspan="3"></td><td colspan="2" class="linea-cruce">--------- XX ---------</td><td colspan="2" style="font-weight:bold; color:var(--primary)">1699001030 CTA MAYOR</td></tr>`;
 
-        /**
-         * Muestra un mensaje flotante (reemplazo de alert()).
-         */
-        function showMessage(message, type = 'error') {
-            const box = document.getElementById('messageBox');
-            box.textContent = message;
+        if (Math.abs(difSoles) > 0.009 || Math.abs(difUSD) > 0.009) {
+            htmlAsiento += `<tr><td colspan="7" class="separador-informativo">NOTA: Diferencias encontradas entre facturación y cobranza:</td></tr>`;
             
-            box.classList.remove('bg-red-600', 'bg-green-600', 'opacity-100');
-            box.classList.add('opacity-0'); 
-
-            if (type === 'error') {
-                box.classList.add('bg-red-600');
-            } else if (type === 'success') {
-                box.classList.add('bg-green-600');
+            if (Math.abs(difSoles) > 0.009) {
+                let esGanancia = difSoles > 0;
+                let clv = esGanancia ? "50" : "40"; 
+                let cuenta = esGanancia ? "6760000000" : "7760000000";
+                let color = esGanancia ? "#dc3545" :  "#28a745";
+                let texto = esGanancia ? "PERD. POR DIFERENCIA CAMB. (PEN)" : "GANAN. POR DIFERENCIA CAMB. (PEN)";
+                htmlAsiento += `<tr><td></td><td style="text-align:center">${clv}</td><td>${cuenta}</td><td></td><td style="text-align:right; color:${color}; font-weight:bold">${formatearNumero(Math.abs(difSoles))}</td><td></td><td>${texto}</td></tr>`;
             }
 
-            requestAnimationFrame(() => {
-                box.classList.add('opacity-100');
-                box.classList.remove('opacity-0');
-            });
-
-            setTimeout(() => {
-                box.classList.remove('opacity-100');
-                box.classList.add('opacity-0');
-            }, 4000);
+            if (Math.abs(difUSD) > 0.009) {
+                let esGanancia = difUSD > 0;
+                let clv = esGanancia ? "40" : "50"; 
+                let cuenta = esGanancia ? "6593002000" : "7599012000"; 
+                let color = esGanancia ?  "#dc3545" : "#28a745";
+                let textoGlosa = esGanancia ? "GAST. POR REDONDEO. (USD)" : "ING. POR REDONDEO. (USD)";
+                htmlAsiento += `<tr><td></td><td style="text-align:center">${clv}</td><td>${cuenta}</td><td style="text-align:right; color:${color}; font-weight:bold">${formatearNumero(Math.abs(difUSD))}</td><td></td><td></td><td>${textoGlosa}</td></tr>`;
+            }
         }
 
-        // Generar captcha aleatorio
-        function generarCaptcha() {
-            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-            let code = "";
-            for (let i = 0; i < 5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-            document.getElementById("captchaCode").textContent = code;
-            document.getElementById("captchaInput").value = ""; // Limpiar input del captcha
-        }
+        datosPdfActual = { ...d, valJ, valH, valQ, valP, valU, valV, difSoles, difUSD, pctBanco, pctDetrac, pctContra, pctDeudor };
+        document.getElementById('asientoBody').innerHTML = htmlAsiento;
+    }
 
-        // Actualiza el select de Especialidad basado en la Instancia seleccionada
-        function updateEspecialidad() {
-            const instancia = document.getElementById("instancia").value;
-            const especialidad = document.getElementById("especialidad");
-            especialidad.innerHTML = "";
-            
-            const opts = especialidades[instancia] || especialidades["--SELECCIONAR"];
+    function buscarFacturaIndividual() {
+        const query = document.getElementById('facturaInput').value.trim().toLowerCase();
+        if(!query) return alert("Por favor inserte una factura.");
+        const fila = rawData.slice(2).find(r => r[5] && String(r[5]).trim().toLowerCase() === query);
+        if(!fila) return alert("Factura no ubicada.");
+        document.getElementById('dashboard').style.display='block';
+        procesarFilaAsiento(fila);
+    }
 
-            opts.forEach(e => {
-                const opt = document.createElement("option");
-                opt.textContent = e;
-                especialidad.appendChild(opt);
-            });
-        }
+    async function generarZipMasivo() {
+        const desde = document.getElementById('facturaDesde').value.trim().toLowerCase();
+        const hasta = document.getElementById('facturaHasta').value.trim().toLowerCase();
+
+        if (!rawData || rawData.length === 0) return alert("Cargue el archivo de Excel primero.");
+        if (!desde || !hasta) return alert("Falta especificar rangos 'Desde' y 'Hasta'.");
+
+        const filasFiltradas = rawData.slice(2);
+        const idxDesde = filasFiltradas.findIndex(r => r[5] && String(r[5]).trim().toLowerCase() === desde);
+        const idxHasta = filasFiltradas.findIndex(r => r[5] && String(r[5]).trim().toLowerCase() === hasta);
+        if (idxDesde === -1) return alert("La factura inicial no existe.");
+        if (idxHasta === -1) return alert("La factura final no existe.");
+        if (idxDesde > idxHasta) return alert("Rango inconsistente.");
+
+        const loteFacturas = filasFiltradas.slice(idxDesde, idxHasta + 1);
         
-        /**
-         * Realiza la limpieza de la pantalla de búsqueda y formulario.
-         * Esta función es llamada por "Nueva Búsqueda" y ahora por "INICIO".
-         */
-        function mostrarBusqueda() {
-            // OCULTAR resultados
-            document.getElementById("resultContainer").classList.add("hidden");
-            // MOSTRAR formulario de búsqueda
-            document.getElementById("searchContainer").classList.remove("hidden");
-            // Limpiar el área de resultados
-            document.getElementById("reporteDetallado").innerHTML = "";
+        const contenedorProgreso = document.getElementById('progresoContenedor');
+        const barraProgreso = document.getElementById('progresoBarra');
+        const textoProgreso = document.getElementById('progresoTexto');
+        
+        document.getElementById('dashboard').style.display = 'block';
+        contenedorProgreso.style.display = 'block';
+
+        const zip = new JSZip();
+        const { jsPDF } = window.jspdf;
+
+        for (let i = 0; i < loteFacturas.length; i++) {
+            const filaActual = loteFacturas[i];
+            procesarFilaAsiento(filaActual);
+            const data = datosPdfActual;
             
-            generarCaptcha(); // Regenera el captcha
+            const facturaNombre = data.nroFactura;
+            const empresaNombre = data.nomEmpresa;
+            textoProgreso.innerText = `Generando reportes alineados: ${i + 1} de ${loteFacturas.length} (${facturaNombre})`;
+            barraProgreso.style.width = `${((i + 1) / loteFacturas.length) * 100}%`;
+            const doc = new jsPDF({ orientation: "landscape", format: "a4", unit: "mm" });
+            
+            doc.setFillColor(0, 86, 179);
+            doc.roundedRect(10, 10, 277, 12, 3, 3, "F");
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text("ELECTRO PUNO S.A.A.", 15, 17.5);
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(10);
+            doc.text("|  Departamento de Contabilidad y Activo Fijo - Ingresos", 65, 17.5);
 
-            // Muestra el comunicado (solo si estamos en la sección de Búsqueda/INICIO)
-            if (!document.getElementById("sectionSearch").classList.contains("hidden")) {
-                document.getElementById("comunicadoBox").classList.remove("hidden"); 
-            }
-
-            // Limpia los campos de búsqueda del formulario
-            document.getElementById("distrito").value = "--SELECCIONAR";
-            document.getElementById("instancia").value = "--SELECCIONAR";
-            updateEspecialidad(); // Actualiza especialidad después de cambiar instancia
-            document.getElementById("anio").value = "";
-            document.getElementById("expediente").value = "";
-        }
-
-
-        /**
-         * Muestra la sección correcta (INICIO, VIDEOTUTORIALES, PREGUNTAS FRECUENTES).
-         * MODIFICADO: Si el destino es 'search' (INICIO), siempre llama a mostrarBusqueda() para resetear.
-         */
-        function showSection(sectionId) {
-            // Ocultar todas las secciones
-            document.querySelectorAll('.content-section').forEach(content => {
-                content.classList.add('hidden');
+            doc.setDrawColor(224, 230, 237); 
+            doc.setLineWidth(0.4);
+            
+            doc.roundedRect(10, 27, 135, 42, 4, 4, "S");
+            doc.setTextColor(0, 86, 179);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.text("DATOS GENERALES DEL CLIENTE", 14, 33);
+            doc.autoTable({
+                startY: 36, margin: { left: 13 }, tableWidth: 129,
+                styles: { fontSize: 8, cellPadding: 2, font: "helvetica" },
+                body: [ ["Empresa", data.nomEmpresa], ["RUC", data.rucCliente], ["Deudor", data.ctaDeudor] ],
+                columnStyles: { 0: { fontStyle: "bold", textColor: [102, 102, 102], width: 35 }, 1: { halign: "right", fontStyle: "bold" } },
+                theme: "plain"
             });
 
-            // Mostrar la sección seleccionada
-            document.getElementById(`section${sectionId.charAt(0).toUpperCase() + sectionId.slice(1)}`).classList.remove('hidden');
+            doc.roundedRect(152, 27, 135, 42, 4, 4, "S");
+            doc.setTextColor(0, 86, 179);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.text("RESUMEN DE FACTURA", 219.5, 33, { align: "center" });
+            doc.autoTable({
+                startY: 35.5, margin: { left: 155 }, tableWidth: 129,
+                styles: { fontSize: 7.8, cellPadding: 1.2, font: "helvetica" },
+                body: [
+                    ["FACTURA", data.nroFactura], ["FECHA DE DOC", data.fechaDoc],
+                    ["IMPORTE USD", `$ ${formatearNumero(data.uDeudor)}`], ["TIPO DE CAMBIO", data.tipoCambio.toFixed(3)],
+                    ["TOTAL PEN", `S/ ${formatearNumero(data.sDeudor)}`], ["DETRACCION", data.tipoDet || 'EN BLANCO']
+                ],
+                columnStyles: { 0: { fontStyle: "bold", textColor: [102, 102, 102], width: 40 }, 1: { halign: "right", fontStyle: "bold" } },
+                theme: "plain"
+            });
 
-            // Lógica para INICIO: Si se presiona INICIO, debe resetear la búsqueda
-            if (sectionId === 'search') {
-                mostrarBusqueda(); // Esto se encarga de mostrar el formulario, ocultar resultados y mostrar el comunicado
+            let cuerpoAsiento = [];
+            cuerpoAsiento.push(["", "", "", "", "", "Fecha Doc.", data.fechaDoc]);
+            
+            if (data.tipoDet === "DETRACCION") {
+                cuerpoAsiento.push([data.pctBanco, "40", data.ctaBanco, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
+                cuerpoAsiento.push([data.pctDetrac, "40", "1041118041", formatearNumero(data.valV), formatearNumero(data.valU), data.fV2, `DEP. FOSE ${data.nomEmpresa} ALQUILER DE INFR. DETRACCION`]);
+                cuerpoAsiento.push([data.pctDeudor, "15", data.ctaDeudor, formatearNumero(data.valP + data.valV), formatearNumero(data.valQ + data.valU), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
+            } else if (data.tipoDet === "AUTO DETRAC.") {
+                cuerpoAsiento.push([data.pctBanco, "40", data.ctaBanco, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
+                cuerpoAsiento.push([data.pctDetrac, "40", "1041118041", formatearNumero(data.valV), formatearNumero(data.valU), data.fV2, `DEP. FOSE ${data.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION`]);
+                cuerpoAsiento.push([data.pctContra, "50", "1041102132", formatearNumero(data.valV), formatearNumero(data.valU), data.fV2, `DEP. FOSE ${data.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION`]);
+                cuerpoAsiento.push([data.pctDeudor, "15", data.ctaDeudor, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
             } else {
-                // Si no es la sección de búsqueda, ocultamos el comunicado
-                document.getElementById("comunicadoBox").classList.add("hidden");
-            }
-        }
-
-
-        // Inicializar al cargar la página
-        document.addEventListener('DOMContentLoaded', () => {
-            generarCaptcha();
-            updateEspecialidad();
-            updateTime(); // Llamada inicial para mostrar la hora
-            // Inicia en la sección de Búsqueda (INICIO), llamando a showSection() para inicializar correctamente
-            showSection('search'); 
-        });
-
-
-        /**
-         * Muestra los resultados y oculta el formulario de búsqueda.
-         */
-        function mostrarResults() {
-             document.getElementById("searchContainer").classList.add("hidden");
-            document.getElementById("resultContainer").classList.remove("hidden");
-            // Oculta el comunicado
-            document.getElementById("comunicadoBox").classList.add("hidden"); 
-        }
-        
-
-
-        // --- Lógica de Búsqueda (CON DIAGNÓSTICO DE ERROR Y COLUMNAS FIJAS) ---
-
-        async function buscarExpediente() {
-            // 1. Validar Captcha
-            const codigo = document.getElementById("captchaCode").textContent;
-            const entrada = document.getElementById("captchaInput").value.trim().toUpperCase();
-            if (entrada !== codigo) {
-                showMessage("Código de verificación incorrecto. Intente de nuevo.", 'error');
-                generarCaptcha();
-                return;
-            }
-
-            // 2. Validar campos obligatorios
-            const distrito = document.getElementById("distrito").value;
-            const instancia = document.getElementById("instancia").value;
-            const especialidad = document.getElementById("especialidad").value;
-            const anio = document.getElementById("anio").value.trim();
-            const expediente = document.getElementById("expediente").value.trim();
-
-            if (distrito === "--SELECCIONAR" || instancia === "--SELECCIONAR" || especialidad === "--SELECCIONAR" || !expediente || !anio) {
-                showMessage("Por favor, complete todos los campos obligatorios (*).", 'error');
-                generarCaptcha(); 
-                return;
+                cuerpoAsiento.push([data.pctBanco, "40", data.ctaBanco, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
+                cuerpoAsiento.push([data.pctDeudor, "50", data.ctaDeudor, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
             }
             
-            // Mostrar indicador de carga
-            document.getElementById("loadingIndicator").classList.remove("hidden");
-            document.getElementById("reporteDetallado").innerHTML = "";
+            cuerpoAsiento.push(["", "", "1699001030 CTA MAYOR", "", "", "", ""]);
 
-            // 3. Preparar criterios de búsqueda (se limpian los secundarios)
-            const searchCriteria = {
-                expediente: expediente.trim().toUpperCase(), 
-                anio: anio.trim().toUpperCase(), 
-                distrito: ultraClean(distrito),
-                instancia: ultraClean(instancia),
-                especialidad: ultraClean(especialidad)
-            };
-            
-            // Log para debug
-            console.log("CRITERIOS DE BÚSQUEDA NORMALIZADOS Y LIMPIADOS:", searchCriteria);
+            if (Math.abs(data.difSoles) > 0.009 || Math.abs(data.difUSD) > 0.009) {
+                cuerpoAsiento.push([{content: 'NOTA: Diferencias encontradas entre facturación y cobranza:', colSpan: 7, styles: {halign: 'center', fillColor: [218, 237, 242], textColor: [133, 100, 4], fontStyle: 'bold'}}]);
 
-
-            // 4. Conectar y Buscar en Google Sheets
-            try {
-                // Implementar lógica de reintento con backoff exponencial
-                const maxRetries = 3;
-                let response = null;
-
-                for (let i = 0; i < maxRetries; i++) {
-                    try {
-                        response = await fetch(sheetURL);
-                        if (response.ok) break; 
-                        throw new Error(`Error HTTP: ${response.status}`);
-                    } catch (e) {
-                        if (i === maxRetries - 1) throw e; 
-                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000)); // Espera exponencial
-                    }
+                if (Math.abs(data.difSoles) > 0.009) {
+                    let esGanancia = data.difSoles > 0;
+                    let clv = esGanancia ? "40" : "50"; 
+                    let cuenta = esGanancia ? "6760000000" : "7760000000";
+                    let texto = esGanancia ? "PERD. POR DIFERENCIA CAMB. (PEN)" : "GANAN. POR DIFERENCIA CAMB. (PEN)";
+                    cuerpoAsiento.push(["", clv, cuenta, "", formatearNumero(Math.abs(data.difSoles)), "", texto]);
                 }
-                
-                if (!response.ok) {
-                    throw new Error(`Fallo después de ${maxRetries} intentos. Código HTTP: ${response.status}`);
+                if (Math.abs(data.difUSD) > 0.009) {
+                    let esGanancia = data.difUSD > 0;
+                    let clv = esGanancia ? "40" : "50"; 
+                    let cuenta = esGanancia ? "6593002000" : "7599012000";
+                    let textoGlosa = esGanancia ? "GAST. POR REDONDEO. (USD)" : "ING. POR REDONDEO. (USD)";
+                    cuerpoAsiento.push(["", clv, cuenta, formatearNumero(Math.abs(data.difUSD)), "", "", textoGlosa]);
                 }
-
-                const text = await response.text();
-                
-                // Parsing específico para el formato JSONP de GSheets
-                const jsonString = text.substring(47).slice(0, -2);
-                const json = JSON.parse(jsonString);
-                
-                const rows = json.table.rows;
-                const headers = json.table.cols.map(c => c.label);
-
-                // 5. Filtrar datos con diagnóstico de error (usando índices de columna fijos)
-                let foundMatch = null;
-                // CAMBIO SOLICITADO ANTERIOR: Mensaje de error simplificado
-                let errorReason = "No se encontró el Expediente N°: " + expediente + ".";
-
-                // Transformar las filas de Google Sheets a objetos usando los encabezados
-                const allDataObjects = rows.map(r => {
-                    const obj = {};
-                    r.c.forEach((cell, index) => {
-                        // Usar el valor (v) o la cadena formateada (f) if the value is null
-                        obj[headers[index]] = (cell && cell.v !== undefined) ? cell.v : (cell && cell.f !== undefined) ? cell.f : "";
-                    });
-                    return obj;
-                });
-                
-                // 5.1. PRIMER FILTRO: N° Expediente (Columna E, índice 4)
-                const expedientMatches = allDataObjects.filter(obj => {
-                    // Obtener el valor del N° Expediente usando la posición fija (encabezado)
-                    const rowExpediente = (obj[headers[COLUMN_INDICES.EXPEDIENTE]] || "").toString().trim().toUpperCase();
-                    // El valor del Expediente de la BD DEBE CONTENER el valor del formulario.
-                    return rowExpediente.includes(searchCriteria.expediente); 
-                });
-                
-                if (expedientMatches.length === 0) {
-                    // errorReason ya está establecido al inicio con el mensaje simplificado.
-                } else {
-                    // 5.2. SEGUNDO FILTRO Y DIAGNÓSTICO: Validar los 4 criterios secundarios (A, B, C, D)
-                    for (const obj of expedientMatches) {
-                        // Función auxiliar para obtener el valor del Sheet por índice
-                        const getRowValueByIndex = (index) => (obj[headers[index]] || "").toString();
-
-                        // Preparar valores del Sheet para comparación
-                        const rowAnio = getRowValueByIndex(COLUMN_INDICES.ANIO).trim().toUpperCase();
-                        const rowDistritoClean = ultraClean(getRowValueByIndex(COLUMN_INDICES.DISTRITO));
-                        const rowInstanciaClean = ultraClean(getRowValueByIndex(COLUMN_INDICES.INSTANCIA));
-                        const rowEspecialidadClean = ultraClean(getRowValueByIndex(COLUMN_INDICES.ESPECIALIDAD));
-                        
-                        // Validaciones
-                        const matchAnio = rowAnio.includes(searchCriteria.anio);
-                        const matchDistrito = rowDistritoClean.includes(searchCriteria.distrito); 
-                        const matchInstancia = rowInstanciaClean.includes(searchCriteria.instancia);
-                        const matchEspecialidad = rowEspecialidadClean.includes(searchCriteria.especialidad); 
-
-                        if (matchAnio && matchDistrito && matchInstancia && matchEspecialidad) {
-                            // Coincidencia perfecta encontrada
-                            foundMatch = obj;
-                            break; 
-                        } else {
-                            // Si el Expediente coincidió, pero fallaron los secundarios, diagnosticamos cuál falló
-                            if (!matchAnio) {
-                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero el **Año (${headers[COLUMN_INDICES.ANIO]})** es incorrecto. Valor esperado: ${searchCriteria.anio}. Valor en BD: ${rowAnio}.`;
-                            } else if (!matchDistrito) {
-                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero el **Distrito Judicial (${headers[COLUMN_INDICES.DISTRITO]})** es incorrecto. Valor esperado (limpio): ${searchCriteria.distrito}. Valor en BD (limpio): ${rowDistritoClean}.`;
-                            } else if (!matchInstancia) {
-                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero la **Instancia (${COLUMN_INDICES.INSTANCIA})** es incorrecta. Valor esperado (limpio): ${searchCriteria.instancia}. Valor en BD (limpio): ${rowInstanciaClean}.`;
-                            } else if (!matchEspecialidad) {
-                                errorReason = `El Expediente N° ${expediente} fue encontrado, pero la **Especialidad (${COLUMN_INDICES.ESPECIALIDAD})** es incorrecta. Valor esperado (limpio): ${searchCriteria.especialidad}. Valor en BD (limpio): ${rowEspecialidadClean}.`;
-                            }
-                        }
-                    }
-                }
-            
-                // --- CONTINUACIÓN DEL BLOQUE DE CÓDIGO INICIAL (PARTE 1) ---
-                document.getElementById("loadingIndicator").classList.add("hidden");
-
-                if (foundMatch) {
-                    // Necesitamos pasar el nombre del encabezado del Expediente para que funcione el display
-                    const expedienteHeader = headers[COLUMN_INDICES.EXPEDIENTE];
-                    
-                    // PASO CRÍTICO: Obtenemos el encabezado para el PDF
-                    const urlPdfHeader = COLUMN_INDICES.URL_PDF_HEADER_KEY; 
-                    
-                    mostrarResults(); // Muestra resultados y OCULTA comunicado
-                    mostrarResultadosDetallados(headers, foundMatch, expedienteHeader, urlPdfHeader); 
-                    showMessage(`Expediente encontrado y detallado.`, 'success');
-                } else {
-                    // Se usa el errorReason simplificado aquí
-                    const finalErrorDisplay = errorReason.startsWith("No se encontró") 
-                        ? `<p class="font-semibold text-red-700">Error de Coincidencia:</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">Asegúrese de que el Expediente, Año y el Distrito/Instancia/Especialidad en su hoja de cálculo coincidan lo suficiente, ignorando espacios y guiones.</p>`
-                        : `<p class="font-semibold text-red-700">Error de Coincidencia:</p><p class="text-sm mt-1">${errorReason}</p><p class="text-xs mt-2 text-gray-500">El N° Expediente fue encontrado, pero los filtros secundarios no coincidieron.</p>`;
-
-                    document.getElementById("reporteDetallado").innerHTML = `<div class="text-center p-8 bg-gray-50 border border-dashed border-red-300 rounded-lg text-gray-600">${finalErrorDisplay}</div>`;
-                    showMessage("Búsqueda fallida: " + errorReason.replace(/\*\*/g, '').replace(/\<br\>/g, ' '), 'error');
-                    mostrarResults(); // Muestra resultados y OCULTA comunicado para ver el mensaje de error
-                    console.error("DIAGNÓSTICO DE FALLO:", errorReason);
-                }
-
-            } catch (e) {
-                document.getElementById("loadingIndicator").classList.add("hidden");
-                showMessage(`Error grave en la conexión/parsing de la Base de Datos. Detalle: ${e.message}`, 'error');
-                console.error("Error al obtener o parsear Google Sheets:", e);
-                mostrarBusqueda(); 
             }
-        } // Cierre de la función buscarExpediente()
 
+            let filasContador = cuerpoAsiento.length;
+            let altoMarcoAsiento = 22 + (filasContador * 7.2);
 
-        // --- Lógica de Generación de HTML ---
-
-        /**
-         * Genera el HTML del reporte detallado (sección principal, partes procesales y etapas del proceso).
-         */
-        function mostrarResultadosDetallados(headers, data, nroExpedienteHeader, urlPdfHeader) {
-            const reporteDetalladoDiv = document.getElementById("reporteDetallado");
-            reporteDetalladoDiv.innerHTML = ""; 
-
-            // Obtener el N° Expediente para el título
-            const displayExpediente = data[nroExpedienteHeader] || document.getElementById("expediente").value;
-
-            // Obtener la URL del PDF y verificar que sea una URL válida, buscándola por el HEADER KEY
-            const rawPdfUrl = data[urlPdfHeader] || null;
-            const pdfUrl = rawPdfUrl && isUrl(rawPdfUrl) ? rawPdfUrl : null;
-
-            // --- 1. Generar Reporte de Expediente (Sección Superior) ---
-            const mainReportHtml = generarReporteExpediente(headers, data, nroExpedienteHeader, displayExpediente, pdfUrl);
-
-            // --- 2. Generar Partes Procesales (Sección Media) ---
-            const partesReportHtml = generarReportePartes(data);
-
-            // --- 3. Generar Etapas del Proceso (Sección Inferior) ---
-            const etapasReportHtml = generarReporteEtapas(headers, data);
+            doc.roundedRect(10, 73, 277, altoMarcoAsiento, 5, 5, "S");
+            doc.setTextColor(0, 86, 179);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
             
-            // 4. Insertar todos los reportes
-            reporteDetalladoDiv.innerHTML = mainReportHtml + partesReportHtml + etapasReportHtml;
-        }
-
-        /**
-         * Auxiliar para generar el HTML de la sección de REPORTE DE EXPEDIENTE.
-         * Se añade 'pdfUrl' para generar el botón.
-         */
-        function generarReporteExpediente(headers, data, nroExpedienteHeader, displayExpediente, pdfUrl) {
-            
-            // Mapeo de columnas a mostrar en el detalle
-            const fieldMapExpediente = {
-                [nroExpedienteHeader]: 'N° EXPEDIENTE', 
-                'ORGANO JURISDICCIONAL': 'ÓRGANO JURISDICCIONAL',
-                'JUEZ': 'JUEZ',
-                'FECHA DE INICIO': 'FECHA DE INICIO',
-                'MATERIA(S)': 'MATERIA(S)',
-                'ETAPA PROCESAL': 'ETAPA PROCESAL',
-                'UBICACION': 'UBICACIÓN',
-                'SUMILLA': 'SUMILLA',
-                'ESPECIALISTA LEGAL': 'ESPECIALISTA LEGAL',
-                'PROCESO': 'PROCESO',
-                'ESTADO': 'ESTADO',
-                'FECHA CONCLUSION': 'FECHA CONCLUSIÓN',
-                'MOTIVO CONCLUSION': 'MOTIVO CONCLUSIÓN',
-                // Excluimos la columna de URL PDF del detalle
-                [COLUMN_INDICES.URL_PDF_HEADER_KEY]: null, 
-            };
-
-            let leftGridItems = '';
-            let rightGridItems = '';
-            let fieldIndex = 0;
-            const fieldsToShow = Object.keys(fieldMapExpediente);
-
-            fieldsToShow.forEach(sheetHeader => {
-                // Si el mapeo es nulo, se omite (usado para la URL PDF)
-                if (fieldMapExpediente[sheetHeader] === null) return; 
-                
-                const label = fieldMapExpediente[sheetHeader];
-                let value = data[sheetHeader] ? String(data[sheetHeader]).trim() : '---'; 
-                
-                // Si el valor es una URL, la reemplazamos con '---' para que no se muestre como texto en este detalle
-                if (isUrl(value)) {
-                    value = '---'; 
-                }
-
-                if (data.hasOwnProperty(sheetHeader) && value !== '---') { 
-                    const itemHtml = `
-                        <div class="report-grid-item">
-                            <strong class="text-xs sm:text-sm text-gray-700 uppercase">${label}:</strong>
-                            <span class="text-sm font-semibold text-gray-900 break-words">${value}</span>
-                        </div>
-                    `;
-
-                    if (fieldIndex % 2 === 0) {
-                        leftGridItems += itemHtml;
-                    } else {
-                        rightGridItems += itemHtml;
-                    }
-                    fieldIndex++;
-                }
+            doc.text("PROPUESTA DE ASIENTO CONTABLE PARA FINANZAS", 148.5, 79, { align: "center" });
+            doc.autoTable({
+                startY: 82, margin: { left: 14, right: 14 },
+                head: [["%", "CLV", "CUENTA", "USD", "PEN", "FECHA VALOR", "GLOSA / DESCRIPCIÓN"]],
+                body: cuerpoAsiento, theme: "striped",
+                styles: { font: "courier", fontSize: 8.5, cellPadding: 2 },
+                headStyles: { fillColor: [248, 249, 250], textColor: [0, 86, 179], fontStyle: "bold", font: "helvetica", halign: "center" },
+                columnStyles: { 0: { width: 10, halign: "center", fontStyle: "bold" }, 1: { width: 10, halign: "center" }, 2: { width: 30, halign: "left" }, 3: { width: 28, halign: "right" }, 4: { width: 28, halign: "right" }, 5: { width: 26, halign: "center" }, 6: { halign: "left" } }
             });
-
-            // Generar el botón de descarga solo si existe la URL válida. 
-            let downloadButtonHtml = '';
-            if (pdfUrl) {
-                downloadButtonHtml = `
-                    <div class="mt-6 md:mt-8 md:col-span-2 flex justify-center md:justify-end">
-                        <a href="${pdfUrl}" target="_blank" class="download-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            DESCARGAR EXPEDIENTE (PDF)
-                        </a>
-                    </div>
-                `;
-            } 
-            // Si pdfUrl es null, no se genera el div de descarga.
-
-            return `
-                <div class="report-section rounded-t-xl mt-0">
-                    1. REPORTE DE EXPEDIENTE
-                    <span class="text-sm font-normal">${displayExpediente}</span>
-                </div>
-                <div class="bg-white p-6 border-x border-b border-gray-200">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-                        <div class="space-y-1">${leftGridItems}</div>
-                        <div class="space-y-1">${rightGridItems}</div>
-                    </div>
-                    ${downloadButtonHtml}
-                </div>
-            `;
-        }
-
-        /**
-         * Auxiliar para generar el HTML de la sección de PARTES PROCESALES.
-         */
-        function generarReportePartes(data) {
-            const parteDemandante = data['PARTE DEMANDANTE'] || data['DEMANDANTE'] || '---';
-            const parteDemandado = data['PARTE DEMANDADO'] || data['DEMANDADO'] || '---';
-            const tipoPersona = data['TIPO DE PERSONA'] || '---'; 
-
-            const demandantes = parteDemandante.split('\n').filter(p => p.trim() !== '' && p.trim() !== '---');
-            const demandados = parteDemandado.split('\n').filter(p => p.trim() !== '' && p.trim() !== '---');
-
-            let partesRowsHtml = '';
-
-            // Llenar tabla con Demandantes
-            if (demandantes.length > 0) {
-                demandantes.forEach(name => {
-                    partesRowsHtml += `
-                        <tr class="hover:bg-gray-50 transition duration-150">
-                            <td class="py-3 px-4 text-judicial-red font-bold">DEMANDANTE</td>
-                            <td class="py-3 px-4">${tipoPersona}</td>
-                            <td class="py-3 px-4 font-medium" colspan="3">${name.trim()}</td>
-                        </tr>
-                    `;
-                });
-            }
-
-            // Llenar tabla con Demandados
-            if (demandados.length > 0) {
-                demandados.forEach(name => {
-                    partesRowsHtml += `
-                        <tr class="hover:bg-gray-50 transition duration-150">
-                            <td class="py-3 px-4 text-blue-800 font-bold">DEMANDADO</td>
-                            <td class="py-3 px-4">${tipoPersona}</td>
-                            <td class="py-3 px-4 font-medium" colspan="3">${name.trim()}</td>
-                        </tr>
-                    `;
-                });
-            }
-
-            // Si no hay información de partes, mostrar una fila de "No hay partes"
-            if (demandantes.length === 0 && demandados.length === 0) {
-                partesRowsHtml = `
-                    <tr class="text-center">
-                        <td class="py-3 px-4 text-gray-500 italic" colspan="5">No hay información de Partes Procesales disponible para este expediente.</td>
-                    </tr>
-                `;
-            }
-
-
-            return `
-                <div class="report-section">
-                    2. PARTES PROCESALES
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
-                </div>
-                <div class="bg-white p-6 border-x border-b border-gray-200 overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
-                                <th class="py-3 px-4 font-bold text-left">ROL</th>
-                                <th class="py-3 px-4 font-bold text-left">TIPO DE PERSONA</th>
-                                <th class="py-3 px-4 font-bold text-left" colspan="3">NOMBRE / RAZÓN SOCIAL</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 whitespace-nowrap text-sm text-gray-700">
-                            ${partesRowsHtml}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        /**
-         * Auxiliar para generar el HTML de la sección de ETAPAS DEL PROCESO.
-         * MODIFICADO: Adaptado para manejar texto y URL dentro de la misma celda, separándolos
-         * y manteniendo los saltos de línea del texto descriptivo.
-         */
-        function generarReporteEtapas(headers, data) {
-            let etapas = [];
             
-            // 1. Recorrer el rango de columnas U (índice 20) hasta BK (índice 62)
-            for (let i = ETAPAS_START_INDEX; i <= ETAPAS_END_INDEX; i++) {
-                const header = headers[i];
-                const rawValue = data[header] ? String(data[header]).trim() : '';
-                
-                if (rawValue && rawValue !== '---') {
-                    // --- Lógica de Parsing de la Celda Única (Texto + URL) ---
-                    const lines = rawValue.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-                    let url = null;
-                    let textContent = [];
+            let finalY = doc.lastAutoTable.finalY + 6;
+            
+            doc.setFillColor(248, 249, 250); doc.rect(10, finalY, 150, 9, "F");
+            doc.setDrawColor(0, 86, 179);
+            doc.setLineWidth(0.8); doc.line(10, finalY, 10, finalY + 9);
+            
+            doc.setTextColor(85, 85, 85); doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+            doc.text("NOTA: Trx FB01, Clase Doc. TC, Moneda USD.", 14, finalY + 5.5);
 
-                    lines.forEach(line => {
-                        if (isUrl(line)) {
-                            url = line;
-                        } else {
-                            textContent.push(line);
-                        }
-                    });
-                    
-                    if (textContent.length > 0 || url) { // Solo si hay contenido o URL
-                        // Limpiar el encabezado (quitar números/guiones/caracteres extraños para display)
-                        const cleanedHeader = header.replace(/^\d+\.\s*/, '').replace(/[-_]/g, ' ').trim();
-                        
-                        etapas.push({
-                            header: cleanedHeader,
-                            text: textContent.join('\n'), // Unir el texto de nuevo con saltos de línea
-                            url: url
-                        });
-                    }
-                }
-            }
+            doc.setTextColor(140, 140, 140); doc.setFont("helvetica", "italic"); doc.setFontSize(7.5);
+            doc.text("®ByRynldLP", 260, finalY + 13); 
 
-            let etapasHtml = '';
+            const pdfBlob = doc.output('blob');
+            zip.file(`${facturaNombre}- ${empresaNombre} Elpu-Ingresos.pdf`, pdfBlob);
 
-            if (etapas.length > 0) {
-                // 2. Iterar sobre las etapas encontradas para generar el HTML
-                etapas.forEach((etapa, index) => {
-                    const headerColor = 'text-gray-800';
-                    const iconColor = 'bg-gray-400';
-                    
-                    // Contenido principal de la descripción (texto y fechas)
-                    let descriptionContent = `
-                        <strong class="block text-sm font-semibold uppercase ${headerColor}">${etapa.header}:</strong>
-                        ${etapa.text ? `<pre class="step-description-pre">${etapa.text}</pre>` : ''}
-                    `;
-                    
-                    // El botón solo se genera si se encontró una URL
-                    let buttonContent = etapa.url ? `
-                        <div class="ml-4 flex-shrink-0">
-                            <a href="${etapa.url}" target="_blank" class="step-link-button">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 10-2.828-2.828l-5.741 5.741a2 2 0 00-1.287 1.287l-1.01 4.706a1 1 0 001.26 1.26l4.706-1.01a2 2 0 001.287-1.287l5.741-5.741zM17 17a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                                </svg>
-                                VER DOCUMENTO
-                            </a>
-                        </div>` : '';
-
-
-                    etapasHtml += `
-                        <div class="step-item">
-                            <div class="flex items-start flex-grow min-w-0">
-                                <div class="w-3 h-3 mt-1.5 mr-3 rounded-full ${iconColor} flex-shrink-0"></div>
-                                <div class="min-w-0 pr-4">
-                                    ${descriptionContent}
-                                </div>
-                            </div>
-                            ${buttonContent}
-                        </div>
-                    `;
-                });
-            } else {
-                    etapasHtml = `<p class="p-4 text-center text-sm text-gray-500 italic">No hay datos de seguimiento del expediente en el rango de columnas U a BK.</p>`;
-            }
-
-            return `
-                <div class="report-section">
-                    3. SEGUIMIENTO DEL EXPEDIENTE
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v5a1 1 0 001 1h3a1 1 0 100-2h-3V7z" clip-rule="evenodd" /></svg>
-                </div>
-                <div class="bg-white p-6 border-x border-b border-gray-200 rounded-b-xl">
-                    <div class="space-y-1">
-                        ${etapasHtml}
-                    </div>
-                </div>
-            `;
+            await new Promise(resolve => setTimeout(resolve, 10));
         }
 
-    </script>
+        textoProgreso.innerText = "Estructurando archivo comprimido ZIP final...";
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        try {
+            const contenidoZip = await zip.generateAsync({ type: "blob" });
+            const enlaceDescarga = document.createElement('a');
+            enlaceDescarga.href = URL.createObjectURL(contenidoZip);
+            enlaceDescarga.download = `01-F102-${desde}_al_${hasta}_Elpu-Ingresos.zip`;
+            document.body.appendChild(enlaceDescarga);
+            enlaceDescarga.click();
+            document.body.removeChild(enlaceDescarga);
+
+            textoProgreso.innerText = `¡Proceso Completado! Se genero un total de  ${loteFacturas.length} PDFs, en 0.05 ⌚seg. - ®ByRynldLP .`;
+            alert(`Lote finalizado con éxito.`);
+        } catch (error) {
+            alert("Error al empaquetar el archivo ZIP.");
+            console.error(error);
+        }
+    }
+</script>
 </body>
 </html>
