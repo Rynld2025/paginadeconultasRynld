@@ -274,7 +274,7 @@
 
         // ZONA 2: NOTA INFORMATIVA (DIFERENCIAS CALCULADAS)
         if (Math.abs(difSoles) > 0.009 || Math.abs(difUSD) > 0.009) {
-            htmlAsiento += `<tr><td colspan="7" class="separador-informativo">NOTA: Diferencias encontradas entre facturación y cobranza:</td></tr>`;
+            htmlAsiento += `<tr><td colspan="7" class="separador-informativo">NOTA INFORMATIVA: Diferencias encontradas entre facturación y cobranza.</td></tr>`;
             
             if (Math.abs(difSoles) > 0.009) {
                 let esGanancia = difSoles > 0;
