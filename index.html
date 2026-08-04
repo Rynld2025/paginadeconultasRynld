@@ -94,6 +94,17 @@
 </head>
 <body>
 
+<!-- PANTALLA DE BLOQUEO POR CONTRASEÑA -->
+<div id="pantalla-bloqueo" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0056b3; display:flex; justify-content:center; align-items:center; z-index:99999;">
+    <div style="background:white; padding:35px; border-radius:10px; text-align:center; box-shadow:0 8px 20px rgba(0,0,0,0.3); width: 320px;">
+        <h3 style="margin-top:0; color:#0056b3;">ELECTRO PUNO S.A.A.</h3>
+        <p style="font-size:13px; color:#666; margin-bottom: 20px;">Ingrese la contraseña autorizada para acceder al sistema:</p>
+        <input type="password" id="input-password" placeholder="Contraseña..." style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:15px; box-sizing: border-box; font-size: 14px;"><br>
+        <button onclick="verificarPassword()" style="background:#0056b3; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; width: 100%; font-size: 14px;">Ingresar al Sistema</button>
+        <p id="error-pass" style="color: #dc3545; font-size: 12px; margin-top: 10px; display: none;">Contraseña incorrecta</p>
+    </div>
+</div>
+
 <div class="navbar no-print">
     <h1>ELECTRO PUNO S.A.A. | <span style="font-weight: 300;">Analisis de Asiento Propuesta</span></h1>
 </div>
@@ -167,6 +178,43 @@
 </div>
 
 <script>
+    // --- BLOQUEOS DE SEGURIDAD (Clic derecho y Atajos F12/Ctrl+U) ---
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (
+            e.key === 'F12' || 
+            (e.ctrlKey && e.key.toLowerCase() === 'u') || 
+            (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase())) ||
+            (e.ctrlKey && e.key.toLowerCase() === 's')
+        ) {
+            e.preventDefault();
+        }
+    });
+
+    // --- FUNCIÓN DE CONTRASEÑA ---
+    function verificarPassword() {
+        const pass = document.getElementById('input-password').value;
+        // Cambia 'Ingresos*2' por la clave que desees otorgar
+        if (pass === 'Ingresos*2') {
+            document.getElementById('pantalla-bloqueo').style.display = 'none';
+        } else {
+            const errorMsg = document.getElementById('error-pass');
+            errorMsg.style.display = 'block';
+            document.getElementById('input-password').value = '';
+        }
+    }
+
+    // Permitir ingresar presionando la tecla Enter en el input de contraseña
+    document.getElementById('input-password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            verificarPassword();
+        }
+    });
+
+    // --- LÓGICA ORIGINAL DE TU SISTEMA ---
     let rawData = [];
     document.getElementById('excelFile').addEventListener('change', function(e) {
         const reader = new FileReader();
@@ -272,7 +320,7 @@
         
         htmlAsiento += `<tr><td colspan="3"></td><td colspan="2" class="linea-cruce">--------- XX ---------</td><td colspan="2" style="font-weight:bold; color:var(--primary)">1699001030 CTA MAYOR</td></tr>`;
 
-        // ZONA 2: NOTA INFORMATIVA (DIFERENCIAS CALCULADAS..)
+        // ZONA 2: NOTA INFORMATIVA (DIFERENCIAS CALCULADAS)
         if (Math.abs(difSoles) > 0.009 || Math.abs(difUSD) > 0.009) {
             htmlAsiento += `<tr><td colspan="7" class="separador-informativo">NOTA INFORMATIVA: Diferencias encontradas entre facturación y cobranza.</td></tr>`;
             
