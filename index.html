@@ -94,17 +94,6 @@
 </head>
 <body>
 
-<!-- PANTALLA DE BLOQUEO POR CONTRASEÑA -->
-<div id="pantalla-bloqueo" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0056b3; display:flex; justify-content:center; align-items:center; z-index:99999;">
-    <div style="background:white; padding:35px; border-radius:10px; text-align:center; box-shadow:0 8px 20px rgba(0,0,0,0.3); width: 320px;">
-        <h3 style="margin-top:0; color:#0056b3;">ELECTRO PUNO S.A.A.</h3>
-        <p style="font-size:13px; color:#666; margin-bottom: 20px;">Ingrese la contraseña autorizada para acceder al sistema:</p>
-        <input type="password" id="input-password" placeholder="Contraseña..." style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:15px; box-sizing: border-box; font-size: 14px;"><br>
-        <button onclick="verificarPassword()" style="background:#0056b3; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold; width: 100%; font-size: 14px;">Ingresar al Sistema</button>
-        <p id="error-pass" style="color: #dc3545; font-size: 12px; margin-top: 10px; display: none;">Contraseña incorrecta</p>
-    </div>
-</div>
-
 <div class="navbar no-print">
     <h1>ELECTRO PUNO S.A.A. | <span style="font-weight: 300;">Analisis de Asiento Propuesta</span></h1>
 </div>
@@ -178,43 +167,6 @@
 </div>
 
 <script>
-    // --- BLOQUEOS DE SEGURIDAD (Clic derecho y Atajos F12/Ctrl+U) ---
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (
-            e.key === 'F12' || 
-            (e.ctrlKey && e.key.toLowerCase() === 'u') || 
-            (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase())) ||
-            (e.ctrlKey && e.key.toLowerCase() === 's')
-        ) {
-            e.preventDefault();
-        }
-    });
-
-    // --- FUNCIÓN DE CONTRASEÑA ---
-    function verificarPassword() {
-        const pass = document.getElementById('input-password').value;
-        // Cambia 'Ingresos*2' por la clave que desees otorgar
-        if (pass === 'Ingresos*2') {
-            document.getElementById('pantalla-bloqueo').style.display = 'none';
-        } else {
-            const errorMsg = document.getElementById('error-pass');
-            errorMsg.style.display = 'block';
-            document.getElementById('input-password').value = '';
-        }
-    }
-
-    // Permitir ingresar presionando la tecla Enter en el input de contraseña
-    document.getElementById('input-password').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            verificarPassword();
-        }
-    });
-
-    // --- LÓGICA ORIGINAL DE TU SISTEMA ---
     let rawData = [];
     document.getElementById('excelFile').addEventListener('change', function(e) {
         const reader = new FileReader();
@@ -263,6 +215,7 @@
             uDetracc: parseFloat(fila[21]) || 0                    // Col V
         };
 
+        // Asignación directa y explícita según tus instrucciones
         let valJ = d.sDeudor;    let valH = d.uDeudor;
         let valQ = d.sBanco;     let valP = d.uBanco;
         let valU = d.sDetracc;   let valV = d.uDetracc;
@@ -288,6 +241,7 @@
         let htmlAsiento = `<thead><tr><th class="col-pct">%</th><th class="col-clv">CLV</th><th class="col-cta">CUENTA</th><th class="col-usd">USD</th><th class="col-pen">PEN</th><th class="col-fec">FECHA VALOR</th><th class="col-glo">GLOSA / DESCRIPCIÓN</th></tr></thead>`;
         htmlAsiento += `<tr><td colspan="3"></td><td colspan="2" class="linea-cruce">--------- XX ---------</td><td style="text-align:center; font-weight:bold">Fecha Doc.</td><td>${d.fechaDoc}</td></tr>`;
 
+        // ZONA 1: REGISTRO OFICIAL (ASIENTO CUADRADO SIEMPRE A CERO CON P Y Q)
         if (d.tipoDet === "DETRACCION") {
             pctBanco = "90%"; pctDetrac = "10%"; pctDeudor = "100%";
             difSoles = valJ - valQ - valU; 
@@ -313,11 +267,12 @@
             difUSD = valH - valP;
 
             htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctBanco}</td><td style="text-align:center">40</td><td>${d.ctaBanco}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
-            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDeudor}</td><td style="text-align:center">50</td><td>${d.ctaDeudor}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDeudor}</td><td style="text-align:center">15</td><td>${d.ctaDeudor}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
         }
         
         htmlAsiento += `<tr><td colspan="3"></td><td colspan="2" class="linea-cruce">--------- XX ---------</td><td colspan="2" style="font-weight:bold; color:var(--primary)">1699001030 CTA MAYOR</td></tr>`;
 
+        // ZONA 2: NOTA INFORMATIVA (DIFERENCIAS CALCULADAS)
         if (Math.abs(difSoles) > 0.009 || Math.abs(difUSD) > 0.009) {
             htmlAsiento += `<tr><td colspan="7" class="separador-informativo">NOTA: Diferencias encontradas entre facturación y cobranza:</td></tr>`;
             
@@ -403,6 +358,7 @@
             doc.setDrawColor(224, 230, 237); 
             doc.setLineWidth(0.4);
             
+            // CUADRO 1
             doc.roundedRect(10, 27, 135, 42, 4, 4, "S");
             doc.setTextColor(0, 86, 179);
             doc.setFont("helvetica", "bold");
@@ -416,6 +372,7 @@
                 theme: "plain"
             });
 
+            // CUADRO 2
             doc.roundedRect(152, 27, 135, 42, 4, 4, "S");
             doc.setTextColor(0, 86, 179);
             doc.setFont("helvetica", "bold");
@@ -433,6 +390,7 @@
                 theme: "plain"
             });
 
+            // RECONSTRUCCION CUERPO ASIENTO PDF
             let cuerpoAsiento = [];
             cuerpoAsiento.push(["", "", "", "", "", "Fecha Doc.", data.fechaDoc]);
             
@@ -447,7 +405,7 @@
                 cuerpoAsiento.push([data.pctDeudor, "15", data.ctaDeudor, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
             } else {
                 cuerpoAsiento.push([data.pctBanco, "40", data.ctaBanco, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
-                cuerpoAsiento.push([data.pctDeudor, "50", data.ctaDeudor, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
+                cuerpoAsiento.push([data.pctDeudor, "15", data.ctaDeudor, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
             }
             
             cuerpoAsiento.push(["", "", "1699001030 CTA MAYOR", "", "", "", ""]);
