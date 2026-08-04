@@ -459,7 +459,7 @@
             cuerpoAsiento.push(["", "", "1699001030 CTA MAYOR", "", "", "", ""]);
 
             if (Math.abs(data.difSoles) > 0.009 || Math.abs(data.difUSD) > 0.009) {
-                cuerpoAsiento.push([{content: 'NOTA: Diferencias encontradas entre facturación y cobranza:', colSpan: 7, styles: {halign: 'center', fillColor: [218, 237, 242], textColor: [133, 100, 4], fontStyle: 'bold'}}]);
+                cuerpoAsiento.push([{content: 'NOTA INFORMATIVA: Diferencias encontradas entre facturación y cobranza.', colSpan: 7, styles: {halign: 'center', fillColor: [218, 237, 242], textColor: [133, 100, 4], fontStyle: 'bold'}}]);
 
                 if (Math.abs(data.difSoles) > 0.009) {
                     let esGanancia = data.difSoles > 0;
