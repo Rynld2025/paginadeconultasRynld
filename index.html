@@ -306,7 +306,7 @@
 
             htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctBanco}</td><td style="text-align:center">40</td><td>${d.ctaBanco}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
             htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDetrac}</td><td style="text-align:center">40</td><td>1041118041</td><td style="text-align:right">${formatearNumero(valV)}</td><td style="text-align:right">${formatearNumero(valU)}</td><td style="text-align:center">${d.fV2}</td><td>DEP. FOSE ${d.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION</td></tr>`;
-            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctContra}</td><td style="text-align:center">50</td><td>1041102132</td><td style="text-align:right">${formatearNumero(valV)}</td><td style="text-align:right">${formatearNumero(valU)}</td><td style="text-align:center">${d.fV2}</td><td>DEP. FOSE ${d.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION</td></tr>`;
+            htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctContra}</td><td style="text-align:center">50</td><td>1041104232</td><td style="text-align:right">${formatearNumero(valV)}</td><td style="text-align:right">${formatearNumero(valU)}</td><td style="text-align:center">${d.fV2}</td><td>DEP. FOSE ${d.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION</td></tr>`;
             htmlAsiento += `<tr><td style="text-align:center; font-weight:bold">${pctDeudor}</td><td style="text-align:center">15</td><td>${d.ctaDeudor}</td><td style="text-align:right">${formatearNumero(valP)}</td><td style="text-align:right">${formatearNumero(valQ)}</td><td style="text-align:center">${d.fV1}</td><td>DEP. FOSE ${d.nomEmpresa} ALQU. DE INFRAESTR. ELECTR</td></tr>`;
         
         } else {
@@ -449,7 +449,7 @@
             } else if (data.tipoDet === "AUTO DETRAC.") {
                 cuerpoAsiento.push([data.pctBanco, "40", data.ctaBanco, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
                 cuerpoAsiento.push([data.pctDetrac, "40", "1041118041", formatearNumero(data.valV), formatearNumero(data.valU), data.fV2, `DEP. FOSE ${data.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION`]);
-                cuerpoAsiento.push([data.pctContra, "50", "1041102132", formatearNumero(data.valV), formatearNumero(data.valU), data.fV2, `DEP. FOSE ${data.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION`]);
+                cuerpoAsiento.push([data.pctContra, "50", "1041104232", formatearNumero(data.valV), formatearNumero(data.valU), data.fV2, `DEP. FOSE ${data.nomEmpresa} ALQUILER DE INFR. AUTO DETRACCION`]);
                 cuerpoAsiento.push([data.pctDeudor, "15", data.ctaDeudor, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
             } else {
                 cuerpoAsiento.push([data.pctBanco, "40", data.ctaBanco, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
