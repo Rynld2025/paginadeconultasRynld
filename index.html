@@ -79,7 +79,7 @@
         .nota-cuadre { margin-top: 12px; padding: 6px 10px; background-color: #f8f9fa; border-left: 4px solid var(--primary); font-size: 11px; color: #555; }
         .firma-contenedor { display: flex; justify-content: flex-end; margin-top: 12px; }
         .firma-texto { font-size: 11px; color: #555; font-style: italic; }
-        .separador-informativo { background-color: #fff3cd; color: #856404; text-align: center; font-weight: bold; padding: 6px !important; border: 1px solid #ffeeba; }
+        .separador-informativo { background-color: #daedf2; color: #856404; text-align: center; font-weight: normal; padding: 6px !important; border: 1px solid #b8d9e3; }
 
         @media print {
             @page { size: landscape; margin: 0.5cm; }
@@ -88,7 +88,7 @@
             .container { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
             .main-dashboard { display: block !important; }
             .print-header-franja { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .separador-informativo { background-color: #fff3cd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .separador-informativo { background-color: #daedf2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
@@ -232,6 +232,44 @@
         return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    // --- CÁLCULO DE TIEMPO TRANSCURRIDO ENTRE FECHA DOC (COL. G) Y FECHA VALOR (COL. M) ---
+    function calcularDiferenciaFechas(fechaIni, fechaFin) {
+        if (!fechaIni || !fechaFin) return "N/D";
+        const partesIni = String(fechaIni).split(".");
+        const partesFin = String(fechaFin).split(".");
+        if (partesIni.length < 3 || partesFin.length < 3) return "N/D";
+
+        const [d1, m1, y1] = partesIni.map(Number);
+        const [d2, m2, y2] = partesFin.map(Number);
+        if (!d1 || !m1 || !y1 || !d2 || !m2 || !y2) return "N/D";
+
+        const fecha1 = new Date(y1, m1 - 1, d1);
+        const fecha2 = new Date(y2, m2 - 1, d2);
+
+        let anios = fecha2.getFullYear() - fecha1.getFullYear();
+        let meses = fecha2.getMonth() - fecha1.getMonth();
+        let dias = fecha2.getDate() - fecha1.getDate();
+
+        if (dias < 0) {
+            meses--;
+            const ultimoDiaMesAnterior = new Date(fecha2.getFullYear(), fecha2.getMonth(), 0).getDate();
+            dias += ultimoDiaMesAnterior;
+        }
+        if (meses < 0) {
+            anios--;
+            meses += 12;
+        }
+
+        const totalDias = Math.round((fecha2 - fecha1) / (1000 * 60 * 60 * 24));
+
+        let partes = [];
+        if (anios > 0) partes.push(`${anios} año${anios !== 1 ? "s" : ""}`);
+        if (meses > 0) partes.push(`${meses} mes${meses !== 1 ? "es" : ""}`);
+        partes.push(`${dias} día${dias !== 1 ? "s" : ""}`);
+
+        return `${partes.join(", ")} (${totalDias} días totales)`;
+    }
+
     function limpiar() {
         document.getElementById('dashboard').style.display='none';
         document.getElementById('facturaInput').value="";
@@ -287,7 +325,7 @@
         `;
 
         let htmlAsiento = `<thead><tr><th class="col-pct">%</th><th class="col-clv">CLV</th><th class="col-cta">CUENTA</th><th class="col-usd">USD</th><th class="col-pen">PEN</th><th class="col-fec">FECHA VALOR</th><th class="col-glo">GLOSA / DESCRIPCIÓN</th></tr></thead>`;
-        htmlAsiento += `<tr><td colspan="3"></td><td colspan="2" class="linea-cruce">--------- XX ---------</td><td style="text-align:center; font-weight:bold">Fecha Doc.</td><td>${d.fechaDoc}</td></tr>`;
+        htmlAsiento += `<tr><td colspan="3"></td><td colspan="2" class="linea-cruce">--------- XX ---------</td><td style="text-align:center; font-weight:bold">Fecha Doc.</td><td>${d.fV1}</td></tr>`;
 
         // ZONA 1: REGISTRO OFICIAL (ASIENTO CUADRADO SIEMPRE A CERO CON P Y Q)
         if (d.tipoDet === "DETRACCION") {
@@ -322,7 +360,7 @@
 
         // ZONA 2: NOTA INFORMATIVA (DIFERENCIAS CALCULADAS)
         if (Math.abs(difSoles) > 0.009 || Math.abs(difUSD) > 0.009) {
-            htmlAsiento += `<tr><td colspan="7" class="separador-informativo">NOTA INFORMATIVA: Diferencias encontradas entre facturación y cobranza.</td></tr>`;
+            htmlAsiento += `<tr><td colspan="7" class="separador-informativo" style="color:#003366; font-weight:normal;">NOTA INFORMATIVA: Diferencias encontradas entre facturación y cobranza. &nbsp;|&nbsp; Tiempo transcurrido (Fec. Fact. → Fec. Cobro): ${calcularDiferenciaFechas(d.fechaDoc, d.fV1)}</td></tr>`;
             
             if (Math.abs(difSoles) > 0.009) {
                 let esGanancia = difSoles > 0;
@@ -440,7 +478,7 @@
 
             // RECONSTRUCCION CUERPO ASIENTO PDF
             let cuerpoAsiento = [];
-            cuerpoAsiento.push(["", "", "", "", "", "Fecha Doc.", data.fechaDoc]);
+            cuerpoAsiento.push(["", "", "", "", "", "Fecha Doc.", data.fV1]);
             
             if (data.tipoDet === "DETRACCION") {
                 cuerpoAsiento.push([data.pctBanco, "40", data.ctaBanco, formatearNumero(data.valP), formatearNumero(data.valQ), data.fV1, `DEP. FOSE ${data.nomEmpresa} ALQU. DE INFRAESTR. ELECTR`]);
@@ -459,7 +497,7 @@
             cuerpoAsiento.push(["", "", "1699001030 CTA MAYOR", "", "", "", ""]);
 
             if (Math.abs(data.difSoles) > 0.009 || Math.abs(data.difUSD) > 0.009) {
-                cuerpoAsiento.push([{content: 'NOTA INFORMATIVA: Diferencias encontradas entre facturación y cobranza.', colSpan: 7, styles: {halign: 'center', fillColor: [218, 237, 242], textColor: [133, 100, 4], fontStyle: 'bold'}}]);
+                cuerpoAsiento.push([{content: `NOTA INFORMATIVA: Diferencias encontradas entre facturación y cobranza.  |  Tiempo transcurrido (Fec. Fact. -> Fec. Cobro): ${calcularDiferenciaFechas(data.fechaDoc, data.fV1)}`, colSpan: 7, styles: {halign: 'center', fillColor: [218, 237, 242], textColor: [0, 51, 102], fontStyle: 'normal', fontSize: 7}}]);
 
                 if (Math.abs(data.difSoles) > 0.009) {
                     let esGanancia = data.difSoles > 0;
@@ -497,7 +535,7 @@
             
             let finalY = doc.lastAutoTable.finalY + 6;
             
-            doc.setFillColor(248, 249, 250); doc.rect(10, finalY, 150, 9, "F");
+            doc.setFillColor(248, 249, 250); doc.rect(10, finalY, 277, 9, "F");
             doc.setDrawColor(0, 86, 179);
             doc.setLineWidth(0.8); doc.line(10, finalY, 10, finalY + 9);
             
